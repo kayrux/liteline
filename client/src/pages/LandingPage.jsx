@@ -1,9 +1,18 @@
-import Login from "../components/authenticator/Login";
+import { useContext } from "react";
+import SignIn from "../components/SignIn";
+import { UserContext } from "../UserContext";
+import ChatRoom from "./ChatRoom";
 
 const LandingPage = () => {
+  const {username, id} = useContext(UserContext);
+
+  if (username) {
+    return <ChatRoom />
+  }
+
   return (
     <div className="container-center justify-center">
-      <Login />
+      <SignIn />
     </div>
   );
 };

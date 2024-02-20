@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './Chatbox.css'; // import CSS for styling
-import { Button } from '@mui/material';
+import React, { useState, useRef, useEffect } from "react";
+import "./Chatbox.css"; // import CSS for styling
+import { Button } from "@mui/material";
 
 // Message component to display individual messages
 const Message = ({ message }) => {
@@ -14,43 +14,67 @@ const Message = ({ message }) => {
 
 // Chatbox component to display the chat interface
 const Chatbox = (props) => {
-  const {username} = props;
+  const { username, roomname, ws } = props;
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
+  
+  useEffect(() => {
+    ws.addEventListener("message", handleMessage);
+  }, []);
+
+  function handleMessage(e) {
+    const messageData = JSON.parse(e.data);
+    console.log("chatbox: ", messageData.text)
+    if (messageData && "text" in messageData) {
+      console.log("adding message")
+      setMessages((prev) => [...prev, {username: messageData.sender, content: messageData.text}])
+    }
+  }
+
+  // ws.on("message", handleMessage);
+
+
   // Function to handle sending messages
   const sendMessage = () => {
-    if (inputValue.trim() !== '') {
+    // e.preventDefault();
+    
+    if (inputValue.trim() !== "") {
       const newMessage = {
         username: username, // Assuming the user is sending the message
         content: inputValue,
       };
+      ws.send(JSON.stringify({
+        sender: username,
+        room: roomname,
+        text: inputValue,
+      }))
       setMessages([...messages, newMessage]);
-      setInputValue('');
+      setInputValue("");
     }
   };
 
-    // Automatically scroll to the bottom of the chat window
-    const scrollToBottom = () => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-  
-    useEffect(() => {
-      scrollToBottom();
-    }, [messages]);
+  // Automatically scroll to the bottom of the chat window
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Function to handle creating commands
   const handleCommand = (command) => {
     // Add your logic here to handle different commands
     switch (command) {
-      case '/clear':
+      case "/clear":
         setMessages([]);
         break;
       default:
         // Command not recognized
         setMessages([
           ...messages,
-          { username: 'Bot', content: `Command "${command}" not recognized.` },
+          { username: "Bot", content: `Command "${command}" not recognized.` },
         ]);
         break;
     }
@@ -71,8 +95,8 @@ const Chatbox = (props) => {
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Type a message..."
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (inputValue.startsWith('/')) {
+            if (e.key === "Enter") {
+              if (inputValue.startsWith("/")) {
                 handleCommand(inputValue);
               } else {
                 sendMessage();
@@ -82,7 +106,7 @@ const Chatbox = (props) => {
         />
         {/* <button >Send</button> */}
         <Button variant="outlined" color="success" onClick={sendMessage}>
-                Send
+          Send
         </Button>
       </div>
     </div>
