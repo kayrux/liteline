@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./Chatbox.css"; // import CSS for styling
 import { Button } from "@mui/material";
+import axios from "axios";
 
 // Message component to display individual messages
 const Message = ({ message }) => {
@@ -25,14 +26,20 @@ const Chatbox = (props) => {
 
   function handleMessage(e) {
     const messageData = JSON.parse(e.data);
-    console.log("chatbox: ", messageData.text)
-    if (messageData && "text" in messageData) {
+    console.log("chatbox: ", messageData)
+    if (messageData && "text" in messageData && roomname === messageData.room) {
       console.log("adding message")
       setMessages((prev) => [...prev, {username: messageData.sender, content: messageData.text}])
     }
   }
 
-  // ws.on("message", handleMessage);
+  useEffect(() => {
+    // when user changes room load messages for room
+    if (roomname) {
+      axios.get('/messages/' + roomname)
+    }
+    setMessages([{username: "Bot", content: `Room changed to ${roomname}`}]);
+  }, [roomname]);
 
 
   // Function to handle sending messages

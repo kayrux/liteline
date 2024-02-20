@@ -26,6 +26,20 @@ app.use(
   })
 );
 
+async function getUserDataFromToken(req) {
+  return new Promise((resolve, reject) => {
+    const token = req.cookies?.token;
+    if (token) {
+      jwt.verify(token, jwtSecret, {}, (err, userData) => {
+        if (err) throw err;
+        resolve(userData);
+      });
+    } else {
+      reject("no token was found");
+    }
+  });
+}
+
 app.get("/test", (req, res) => {
   res.json("test ok");
 });
@@ -48,9 +62,23 @@ app.get("/profile", (req, res) => {
 app.get("/userRooms/:username", async (req, res) => {
   const { username } = req.params;
   const userRooms = await User.findOne({ username });
-  console.log(userRooms.rooms);
-  res.json(Object.assign({}, userRooms.rooms))
-})
+  console.log(userRooms);
+  res.json(Object.assign({}, userRooms.rooms));
+});
+
+app.get("/messages/:roomname", async (req, res) => {
+  const { roomname } = req.params; // TODO: check if room exists
+  // get userId from token
+  const userData = await getUserDataFromToken(req); // TODO: check if user in room
+
+  // returns an array of documents with messages from given room name
+  const messages = await Message.find({
+    room: roomname,
+  }).sort({createdAt:-1});
+
+  // console.log(messages);
+  res.json(messages);
+});
 
 // ToDo: first implement create and join rooms, then implement this
 // app.get("/roomMembers/:roomname", async (req, res) => {
@@ -115,7 +143,6 @@ const server = app.listen(PORT, () => {
 // sockets - access all "connection" inside wss.clients
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
-
   function notifyAboutOnlinePeople() {
     [...wss.clients].forEach((client) => {
       client.send(
@@ -166,10 +193,17 @@ wss.on("connection", (connection, req) => {
     }
   }
 
-  connection.on('message', (message) => {
+  connection.on("message", async (message) => {
     const msgData = JSON.parse(message.toString());
     const { sender, room, text } = msgData;
     if (sender && room && text) {
+      // getting a message from mongodb which auto includes the message id as ._id
+      console.log(sender, room, text);
+      const messageDoc = Message.create({
+        sender,
+        room,
+        text,
+      });
 
       // ToDo: remove this later when getting messages from db is implemented
       [...wss.clients]
@@ -180,12 +214,12 @@ wss.on("connection", (connection, req) => {
               sender: connection.username,
               room,
               text,
-              // _id: messageDoc._id,
+              _id: messageDoc._id,
             })
           )
         );
     }
-  })
+  });
 
   // [...wss.clients].forEach((client) => {
   //   client.send(
