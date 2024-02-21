@@ -74,7 +74,7 @@ app.get("/messages/:roomname", async (req, res) => {
   // returns an array of documents with messages from given room name
   const messages = await Message.find({
     room: roomname,
-  }).sort({createdAt:-1});
+  }).sort({createdAt:1});
 
   // console.log(messages);
   res.json(messages);
@@ -135,6 +135,60 @@ app.post("/signin", async (req, res) => {
     }
   }
 });
+
+app.post("/createRoom", async (req, res) => {
+  const { roomname, username } = req.body;
+  // Todo: verify room doesn't exist
+  try {
+    // create room
+    const createdRoom = await Room.create({
+      name: roomname,
+      users: [ username ]
+    })
+    console.log("Created room: ", createdRoom);
+    // Todo: Verify room was created
+
+    // update user's room
+    const query = { username: username };
+    User.findOne(query).then(doc => {
+      doc.rooms =  [...doc.rooms, roomname];
+      doc.save();
+    })
+    console.log(`Created room ${roomname} for ${username}.`);
+    res.json("created");
+  } catch (err) {
+    console.log(`Failed to create room ${roomname}.`);
+    // if (err) throw err;
+    // res.status(500).json("Failed");
+    res.json("failed");
+  }
+})
+
+app.post("/joinRoom", async (req, res) => {
+  const { roomname, username } = req.body;
+  try {
+    // update room userlist
+    const query = { name: roomname };
+    Room.findOne(query).then(room => {
+      if (room) {
+        room.users = [...room.users, username];
+        room.save();
+
+        User.findOne({ username: username }).then(user => {
+          if (user) {
+            user.rooms = [...user.rooms, roomname]
+            user.save();
+          }
+        })
+      }
+    })
+    console.log(`Joined room ${roomname} for ${username}.`);
+    res.json("joined");
+  } catch (err) {
+    console.log(`Failed to join room ${roomname}.`);
+    res.json("failed");
+  }
+})
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}.`);
@@ -205,7 +259,6 @@ wss.on("connection", (connection, req) => {
         text,
       });
 
-      // ToDo: remove this later when getting messages from db is implemented
       [...wss.clients]
         .filter((c) => c.username !== sender)
         .forEach((c) =>

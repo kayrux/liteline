@@ -16,46 +16,60 @@ const Message = ({ message }) => {
 // Chatbox component to display the chat interface
 const Chatbox = (props) => {
   const { username, roomname, ws } = props;
+  const roomRef = useRef(roomname);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
-  
+
+  useEffect(() => {
+    roomRef.current = roomname;
+  }, [roomname]);
+
   useEffect(() => {
     ws.addEventListener("message", handleMessage);
   }, []);
 
   function handleMessage(e) {
     const messageData = JSON.parse(e.data);
-    console.log("chatbox: ", messageData)
-    if (messageData && "text" in messageData && roomname === messageData.room) {
-      console.log("adding message")
-      setMessages((prev) => [...prev, {username: messageData.sender, content: messageData.text}])
+    console.log(`chatbox room: ${roomRef.current}`, messageData);
+    if (messageData && "text" in messageData && roomRef.current === messageData.room) {
+      console.log("adding message");
+      setMessages((prev) => [
+        ...prev,
+        { username: messageData.sender, content: messageData.text },
+      ]);
     }
   }
 
   useEffect(() => {
     // when user changes room load messages for room
     if (roomname) {
-      axios.get('/messages/' + roomname)
+      axios.get("/messages/" + roomname).then((res) => {
+        console.log("Loaded from db: ", res.data);
+        const messagesArr = res.data;
+        for (const { sender, text } of messagesArr) {
+          setMessages((prev) => [...prev, { username: sender, content: text }]);
+        }
+      });
     }
-    setMessages([{username: "Bot", content: `Room changed to ${roomname}`}]);
+    setMessages([{ username: "Bot", content: `Room changed to ${roomname}` }]);
   }, [roomname]);
-
 
   // Function to handle sending messages
   const sendMessage = () => {
-    // e.preventDefault();
-    
+
     if (inputValue.trim() !== "") {
       const newMessage = {
         username: username, // Assuming the user is sending the message
         content: inputValue,
       };
-      ws.send(JSON.stringify({
-        sender: username,
-        room: roomname,
-        text: inputValue,
-      }))
+      ws.send(
+        JSON.stringify({
+          sender: username,
+          room: roomname,
+          text: inputValue,
+        })
+      );
       setMessages([...messages, newMessage]);
       setInputValue("");
     }

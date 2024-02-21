@@ -11,6 +11,7 @@ import Member from "../components/member/Member";
 import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { UserContext } from "../UserContext";
+import FormDialog from "../components/FormDialog";
 
 const ChatRoom = () => {
   // const { id } = useParams(); // unique id for each chat room
@@ -37,6 +38,7 @@ const ChatRoom = () => {
         connectToWs();
       }, 1000);
     });
+    console.log("ws: Connected.");
   }
 
   function readOnlineClients(clientsArr) {
@@ -54,7 +56,23 @@ const ChatRoom = () => {
     if ("online" in messageData) {
       readOnlineClients(messageData.online);
     } else if ("text" in messageData) {
-      console.log({messageData});
+      // console.log({ messageData });
+    }
+  }
+
+  async function handleCreateRoom(roomname) {
+    const { data } = await axios.post("createRoom", { roomname, username });
+    console.log("Room created? ", data);
+    if (data === "created") {
+      setJoinedRooms([...joinedRooms, roomname]);
+    }
+  }
+
+  async function handleJoinRoom(roomname) {
+    const { data } = await axios.post("joinRoom", { roomname, username });
+    console.log("Joined room?", data);
+    if (data === "joined") {
+      setJoinedRooms([...joinedRooms, roomname]);
     }
   }
 
@@ -119,17 +137,18 @@ const ChatRoom = () => {
             </Button>
 
             <hr class="my-6 border-gray-200 dark:border-gray-400" />
-            <Button variant="contained" startIcon={<GroupAddRoundedIcon />}>
+            {/* <Button variant="contained" startIcon={<GroupAddRoundedIcon />}>
               Join Room
-            </Button>
-
-            <Button
+            </Button> */}
+            <FormDialog title={"Join Room"} text={"Enter the room name you want to join below."} handleSubmit={handleJoinRoom}/>
+            <FormDialog title={"Create Room"} text={"Enter the room name you want to create below."} handleSubmit={handleCreateRoom}/>
+            {/* <Button
               variant="contained"
               color="secondary"
               startIcon={<AddRoundedIcon />}
             >
               Create Room
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
@@ -165,9 +184,9 @@ const ChatRoom = () => {
           {selectedRoom === null ? (
             <>No room</>
           ) : (
-            <>
+
               <Chatbox username={username} roomname={selectedRoom} ws={ws} />
-            </>
+
           )}
         </div>
       </div>
