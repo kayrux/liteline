@@ -80,13 +80,14 @@ app.get("/messages/:roomname", async (req, res) => {
   res.json(messages);
 });
 
-// ToDo: first implement create and join rooms, then implement this
-// app.get("/roomMembers/:roomname", async (req, res) => {
-//   const { name } = req.params;
-//   console.log(name);
-//   const roomMembers = await Room.findOne({ name });
-//   console.log(roomMembers);
-// })
+app.get("/roomMembers/:roomname", async (req, res) => {
+  const { roomname } = req.params;
+  console.log("Room name: ", roomname);
+  const roomMembers = await Room.findOne({ name: roomname });
+  console.log("Room members: ",roomMembers.users);
+  const roomMembersArr = roomMembers.users;
+  res.json(roomMembersArr);
+})
 
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;

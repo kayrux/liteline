@@ -17,14 +17,30 @@ const ChatRoom = () => {
   // const { id } = useParams(); // unique id for each chat room
   const [ws, setWs] = useState(null);
   const [onlineClients, setOnlineClients] = useState([]);
+  const [onlineMembers, setOnlineMembers] = useState([]);
+  const [offlineMembers, setOfflineMembers] = useState([]);
   const [joinedRooms, setJoinedRooms] = useState([]);
   const [roomMembers, setRoomMembers] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const { username, id, setId, setUsername } = useContext(UserContext);
 
-  useEffect(() => {
-    connectToWs();
-  }, []);
+  // only clients connected to proxy
+  function readOnlineClients(clientsArr) {
+    // remove duplicates
+    const online = [];
+    clientsArr.forEach(({ userId, username }) => {
+      // clientListObj[userId] = username;
+      if (!online.includes(username)) online.push(username);
+    });
+    setOnlineClients(online);
+  }
+
+  function handleMessage(e) {
+    const messageData = JSON.parse(e.data);
+    if ("online" in messageData) {
+      readOnlineClients(messageData.online);
+    }
+  }
 
   function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
@@ -41,24 +57,32 @@ const ChatRoom = () => {
     console.log("ws: Connected.");
   }
 
-  function readOnlineClients(clientsArr) {
-    const clientListObj = {};
-    // remove duplicates
-    clientsArr.forEach(({ userId, username }) => {
-      clientListObj[userId] = username;
-    });
-    console.log(clientListObj);
-    setOnlineClients(clientListObj);
-  }
+  useEffect(() => {
+    connectToWs();
+  }, []);
 
-  function handleMessage(e) {
-    const messageData = JSON.parse(e.data);
-    if ("online" in messageData) {
-      readOnlineClients(messageData.online);
-    } else if ("text" in messageData) {
-      // console.log({ messageData });
+  // grab user's rooms
+  useEffect(() => {
+    axios.get("/userRooms/" + username).then((res) => {
+      const userRooms = Object.values(res.data);
+      setJoinedRooms(userRooms);
+    });
+  }, []);
+
+  useEffect(() => {
+    console.log("Getting members for Current room: ", selectedRoom);
+    if (selectedRoom) {
+      axios.get("/roomMembers/" + selectedRoom).then((res) => {
+        console.log("Received room members: ", res.data);
+        const currentRoomMembers = res.data;
+        setRoomMembers(currentRoomMembers);
+      });
     }
-  }
+  }, [selectedRoom]);
+
+
+
+  
 
   async function handleCreateRoom(roomname) {
     const { data } = await axios.post("createRoom", { roomname, username });
@@ -68,6 +92,15 @@ const ChatRoom = () => {
     }
   }
 
+  // offline room members
+  // useEffect(() => {
+  //   const offline = roomMembers.filter((member) => {
+  //     return !onlineMembers.includes(member);
+  //   });
+  //   setOfflineMembers(offline);
+
+  // }, [onlineMembers]);
+
   async function handleJoinRoom(roomname) {
     const { data } = await axios.post("joinRoom", { roomname, username });
     console.log("Joined room?", data);
@@ -76,24 +109,26 @@ const ChatRoom = () => {
     }
   }
 
-  // grab user's rooms
+  // set online & offline room members
   useEffect(() => {
-    axios.get("/userRooms/" + username).then((res) => {
-      const userRooms = Object.values(res.data);
-      setJoinedRooms(userRooms);
-      console.log(userRooms);
+    console.log("Selected room: ", selectedRoom);
+    console.log("Room members: ", roomMembers);
+    console.log("Online Clients: ", onlineClients);
+    const online = onlineClients.filter((client) => {
+      return roomMembers.includes(client);
     });
-  }, []);
+    console.log("online: ", online);
+    setOnlineMembers(online);
 
-  // ToDo: grab members for the selected room
-  // useEffect(() => {
-  //   console.log("Current room: ", selectedRoom);
-  //   if (selectedRoom) {
-  //     axios.get("/roomMembers/" + selectedRoom).then((res) => {
-  //       console.log(res.data);
-  //     })
-  //   }
-  // }, [selectedRoom])
+    const offline = roomMembers.filter((member) => {
+      return !online.includes(member);
+    });
+    console.log("offline: ", offline);
+    setOfflineMembers(offline);
+  }, [roomMembers, onlineClients]);
+
+  // console.log("Online Members: ", onlineMembers);
+  // console.log("Offline Members: ", offlineMembers);
 
   return (
     <div className="container-center flex-row justify-between">
@@ -140,8 +175,16 @@ const ChatRoom = () => {
             {/* <Button variant="contained" startIcon={<GroupAddRoundedIcon />}>
               Join Room
             </Button> */}
-            <FormDialog title={"Join Room"} text={"Enter the room name you want to join below."} handleSubmit={handleJoinRoom}/>
-            <FormDialog title={"Create Room"} text={"Enter the room name you want to create below."} handleSubmit={handleCreateRoom}/>
+            <FormDialog
+              title={"Join Room"}
+              text={"Enter the room name you want to join below."}
+              handleSubmit={handleJoinRoom}
+            />
+            <FormDialog
+              title={"Create Room"}
+              text={"Enter the room name you want to create below."}
+              handleSubmit={handleCreateRoom}
+            />
             {/* <Button
               variant="contained"
               color="secondary"
@@ -184,9 +227,7 @@ const ChatRoom = () => {
           {selectedRoom === null ? (
             <>No room</>
           ) : (
-
-              <Chatbox username={username} roomname={selectedRoom} ws={ws} />
-
+            <Chatbox username={username} roomname={selectedRoom} ws={ws} />
           )}
         </div>
       </div>
@@ -201,9 +242,17 @@ const ChatRoom = () => {
             {/* Scrollable Container for People Components */}
             <div className="overflow-y-scroll flex flex-col items-center items-stretch space-y-3 h-96">
               {/* Buttons */}
-              {Object.keys(onlineClients).map((userId) => (
+              {/* {Object.keys(onlineClients).map((userId) => (
                 <Member username={onlineClients[userId]} />
-              ))}
+              ))} */}
+              {selectedRoom &&
+                onlineMembers.map((member) => (
+                  <Member username={member} isOnline={true} />
+                ))}
+              {selectedRoom &&
+                offlineMembers.map((member) => (
+                  <Member username={member} isOnline={false} />
+                ))}
             </div>
 
             <hr class="my-6 border-gray-200 dark:border-gray-400" />
