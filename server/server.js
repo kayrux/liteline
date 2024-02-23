@@ -137,7 +137,7 @@ app.post("/signout", async (req, res) => {
   // send back token as empty
   res.cookie("token", "", { sameSite: "none", secure: true });
   res.json("signed out");
-})
+});
 
 app.post("/createRoom", async (req, res) => {
   const { roomname, username } = req.body;
@@ -189,6 +189,67 @@ app.post("/joinRoom", async (req, res) => {
     res.json("joined");
   } catch (err) {
     console.log(`Failed to join room ${roomname}.`);
+    res.json("failed");
+  }
+});
+
+app.post("/leaveRoom", async (req, res) => {
+  const { selectedRoom, username } = req.body;
+  try {
+    const query = { name: selectedRoom };
+    Room.findOne(query).then((room) => {
+      console.log(room);
+      if (room) {
+        room.users = room.users.filter((user) => {
+          return user !== username;
+        })
+        room.save();
+
+        User.findOne({ username: username }).then((user) => {
+          if (user) {
+            user.rooms = user.rooms.filter((room) => {
+              return room !== selectedRoom;
+            })
+            user.save();
+            console.log(`Left room ${selectedRoom} for ${username}`);
+            res.json({ message: "left", joinedRooms: user.rooms});
+          }
+        })
+      }
+    })
+  } catch (err) {
+    console.log(`Failed to leave room ${selectedRoom}.`);
+    res.json("failed");
+  }
+});
+
+app.post("/deleteRoom", async (req, res) => {
+  const { roomname, username } = req.body;
+  try {
+    // get all room's user list then delete room from rooms collection
+    const usersInRoom = [];
+    await Room.findOne({ name: roomname }).then((room) => {
+      if (room) {
+        usersInRoom = room.users;
+        room.remove();
+      }
+    });
+
+    // remove room from all users room list in the room
+    usersInRoom.forEach((user) => {
+      User.findOne({ username: user }).then((userData) => {
+        if (userData) {
+          userData.rooms = userData.rooms.filter((room) => {
+            return room !== roomname;
+          });
+          userData.save();
+        }
+      });
+    });
+
+    // delete all messages with the roomname
+  } catch (err) {
+    console.log(`Failed to leave room ${roomname}.`);
     res.json("failed");
   }
 });

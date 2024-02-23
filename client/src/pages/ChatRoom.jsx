@@ -97,8 +97,14 @@ const ChatRoom = () => {
     }
   }
 
-  async function handleLeaveRoom(roomname) {
-    console.log(`Leaving ${roomname}.`);
+  async function handleLeaveRoom() {
+    await axios.post("leaveRoom", { selectedRoom, username }).then((res) => {
+      if (res.data.message == "left") {
+        setJoinedRooms(res.data.joinedRooms);
+        setSelectedRoom(null);
+        console.log(`leaving room ${selectedRoom}`);
+      }
+    });
   }
 
   function handleSignout() {
@@ -138,7 +144,7 @@ const ChatRoom = () => {
           <div className="grid grid-cols-1 gap-4">
             {/* Scrollable Container for Room Components */}
 
-            <div className="overflow-y-scroll flex flex-col items-center items-stretch space-y-3 h-96">
+            <div className="overflow-y-scroll flex flex-col items-stretch space-y-3 h-96">
               {joinedRooms.map((room) => (
                 <button
                   onClick={() => setSelectedRoom(room)}
@@ -250,25 +256,32 @@ const ChatRoom = () => {
                 ))}
             </div>
 
-            <hr class="my-6 border-gray-200 dark:border-gray-400" />
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<RoomPreferencesIcon />}
-            >
-              Room Settings
-            </Button>
+            {selectedRoom && (
+              <div className="flex flex-col justify-between items-stretch gap-4">
+                <hr class="my-6 border-gray-200 dark:border-gray-400" />
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<RoomPreferencesIcon />}
+                >
+                  Room Settings
+                </Button>
+                <AlertDialog
+                  title={"Leave Room"}
+                  text={"Are you sure you want to leave the room?"}
+                  handleSubmit={handleLeaveRoom}
+                />
+                <hr class="my-6 border-gray-200 dark:border-gray-400" />
+                <Button
+                  variant="contained"
+                  color="success"
+                  endIcon={<ShareIcon />}
+                >
+                  Share
+                </Button>
+              </div>
+            )}
 
-            <AlertDialog
-              title={"Leave Room"}
-              text={"Are you sure you want to leave the room?"}
-              handleSubmit={handleLeaveRoom}
-            />
-
-            <hr class="my-6 border-gray-200 dark:border-gray-400" />
-            <Button variant="contained" color="success" endIcon={<ShareIcon />}>
-              Share
-            </Button>
             <AlertDialog
               title={"Signout"}
               text={"This will sign you out of Liteline."}
