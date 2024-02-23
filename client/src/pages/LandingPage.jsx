@@ -6,6 +6,8 @@ import ChatRoom from "./ChatRoom";
 const LandingPage = () => {
   const {username, id} = useContext(UserContext);
 
+  console.log("Landing page: ",username);
+
   if (username) {
     return <ChatRoom />
   }

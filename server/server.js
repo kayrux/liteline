@@ -60,7 +60,7 @@ app.get("/profile", (req, res) => {
 app.get("/userRooms/:username", async (req, res) => {
   const { username } = req.params;
   const userRooms = await User.findOne({ username });
-  console.log(`${username}'s rooms: `, userRooms);
+  console.log(`${username}'s rooms: `, userRooms.rooms);
   res.json(Object.assign({}, userRooms.rooms));
 });
 
@@ -132,6 +132,12 @@ app.post("/signin", async (req, res) => {
     }
   }
 });
+
+app.post("/signout", async (req, res) => {
+  // send back token as empty
+  res.cookie("token", "", { sameSite: "none", secure: true });
+  res.json("signed out");
+})
 
 app.post("/createRoom", async (req, res) => {
   const { roomname, username } = req.body;

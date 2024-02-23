@@ -12,6 +12,7 @@ import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { UserContext } from "../UserContext";
 import FormDialog from "../components/FormDialog";
+import AlertDialog from "../components/AlertDialog";
 
 const ChatRoom = () => {
   // const { id } = useParams(); // unique id for each chat room
@@ -96,6 +97,19 @@ const ChatRoom = () => {
     }
   }
 
+  async function handleLeaveRoom(roomname) {
+    console.log(`Leaving ${roomname}.`);
+  }
+
+  function handleSignout() {
+    axios.post("/signout").then(() => {
+      console.log(`Signing out.`);
+      setWs(null);
+      setId(null);
+      setUsername(null);
+    });
+  }
+
   // set online & offline room members
   useEffect(() => {
     console.log("Selected room: ", selectedRoom);
@@ -117,7 +131,6 @@ const ChatRoom = () => {
   return (
     <div className="container-center flex-row justify-between">
       {/* Left Sidebar */}
-      {/* TODO: Make Room Components */}
       <div className="flex flex-col w-1/5 min-w-fit justify-between items-stretch">
         {/* Sidebar Content */}
         <div className="p-4 text-gray-900">
@@ -134,19 +147,27 @@ const ChatRoom = () => {
                   {room}
                 </button>
               ))}
-              {/* <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Room 1
-              </button> */}
-              {/* <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Room 2
-              </button>
-              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Room 3
-              </button> */}
             </div>
 
             <hr class="my-6 border-gray-200 dark:border-gray-400" />
+            <div className="flex justify-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                />
+              </svg>
 
+              <div className="text-center">{username}</div>
+            </div>
             <Button
               variant="outlined"
               color="inherit"
@@ -156,9 +177,6 @@ const ChatRoom = () => {
             </Button>
 
             <hr class="my-6 border-gray-200 dark:border-gray-400" />
-            {/* <Button variant="contained" startIcon={<GroupAddRoundedIcon />}>
-              Join Room
-            </Button> */}
             <FormDialog
               title={"Join Room"}
               text={"Enter the room name you want to join below."}
@@ -169,13 +187,6 @@ const ChatRoom = () => {
               text={"Enter the room name you want to create below."}
               handleSubmit={handleCreateRoom}
             />
-            {/* <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<AddRoundedIcon />}
-            >
-              Create Room
-            </Button> */}
           </div>
         </div>
       </div>
@@ -221,14 +232,14 @@ const ChatRoom = () => {
       <div className="border-2 h-full"></div>
       <div className="flex flex-col w-1/5 min-w-fit justify-between items-stretch">
         <div className="p-4 text-gray-900">
-          <h1 className="text-lg mb-4">Current Members</h1>
+          {selectedRoom ? (
+            <h1 className="text-lg mb-4">Current Members</h1>
+          ) : (
+            <></>
+          )}
           <div className="grid grid-cols-1 gap-4">
             {/* Scrollable Container for People Components */}
             <div className="overflow-y-scroll flex flex-col items-center items-stretch space-y-3 h-96">
-              {/* Buttons */}
-              {/* {Object.keys(onlineClients).map((userId) => (
-                <Member username={onlineClients[userId]} />
-              ))} */}
               {selectedRoom &&
                 onlineMembers.map((member) => (
                   <Member username={member} isOnline={true} />
@@ -248,10 +259,21 @@ const ChatRoom = () => {
               Room Settings
             </Button>
 
+            <AlertDialog
+              title={"Leave Room"}
+              text={"Are you sure you want to leave the room?"}
+              handleSubmit={handleLeaveRoom}
+            />
+
             <hr class="my-6 border-gray-200 dark:border-gray-400" />
             <Button variant="contained" color="success" endIcon={<ShareIcon />}>
               Share
             </Button>
+            <AlertDialog
+              title={"Signout"}
+              text={"This will sign you out of Liteline."}
+              handleSubmit={handleSignout}
+            />
           </div>
         </div>
       </div>

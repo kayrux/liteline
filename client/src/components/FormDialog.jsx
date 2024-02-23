@@ -1,4 +1,4 @@
-// Opem Form Dialog template from https://mui.com/material-ui/react-dialog/
+// Open Form Dialog template from https://mui.com/material-ui/react-dialog/
 
 import * as React from 'react';
 import Button from '@mui/material/Button';
