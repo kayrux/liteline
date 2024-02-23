@@ -24,24 +24,6 @@ const ChatRoom = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const { username, id, setId, setUsername } = useContext(UserContext);
 
-  // only clients connected to proxy
-  function readOnlineClients(clientsArr) {
-    // remove duplicates
-    const online = [];
-    clientsArr.forEach(({ userId, username }) => {
-      // clientListObj[userId] = username;
-      if (!online.includes(username)) online.push(username);
-    });
-    setOnlineClients(online);
-  }
-
-  function handleMessage(e) {
-    const messageData = JSON.parse(e.data);
-    if ("online" in messageData) {
-      readOnlineClients(messageData.online);
-    }
-  }
-
   function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
     setWs(ws);
@@ -60,6 +42,24 @@ const ChatRoom = () => {
   useEffect(() => {
     connectToWs();
   }, []);
+
+  // only clients connected to proxy
+  function readOnlineClients(clientsArr) {
+    // remove duplicates
+    const online = [];
+    clientsArr.forEach(({ userId, username }) => {
+      // clientListObj[userId] = username;
+      if (!online.includes(username)) online.push(username);
+    });
+    setOnlineClients(online);
+  }
+
+  function handleMessage(e) {
+    const messageData = JSON.parse(e.data);
+    if ("online" in messageData) {
+      readOnlineClients(messageData.online);
+    }
+  }
 
   // grab user's rooms
   useEffect(() => {
@@ -80,10 +80,6 @@ const ChatRoom = () => {
     }
   }, [selectedRoom]);
 
-
-
-  
-
   async function handleCreateRoom(roomname) {
     const { data } = await axios.post("createRoom", { roomname, username });
     console.log("Room created? ", data);
@@ -91,15 +87,6 @@ const ChatRoom = () => {
       setJoinedRooms([...joinedRooms, roomname]);
     }
   }
-
-  // offline room members
-  // useEffect(() => {
-  //   const offline = roomMembers.filter((member) => {
-  //     return !onlineMembers.includes(member);
-  //   });
-  //   setOfflineMembers(offline);
-
-  // }, [onlineMembers]);
 
   async function handleJoinRoom(roomname) {
     const { data } = await axios.post("joinRoom", { roomname, username });
@@ -126,9 +113,6 @@ const ChatRoom = () => {
     console.log("offline: ", offline);
     setOfflineMembers(offline);
   }, [roomMembers, onlineClients]);
-
-  // console.log("Online Members: ", onlineMembers);
-  // console.log("Offline Members: ", offlineMembers);
 
   return (
     <div className="container-center flex-row justify-between">

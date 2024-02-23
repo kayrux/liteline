@@ -46,11 +46,9 @@ app.get("/test", (req, res) => {
 
 app.get("/profile", (req, res) => {
   const token = req.cookies?.token; // ? in case it doesn't exist - will return undefined
-  console.log(token);
   if (token) {
     jwt.verify(token, jwtSecret, {}, (err, userData) => {
       if (err) throw err;
-      console.log("User data: ", userData);
       res.json(userData);
     });
   } else {
@@ -62,7 +60,7 @@ app.get("/profile", (req, res) => {
 app.get("/userRooms/:username", async (req, res) => {
   const { username } = req.params;
   const userRooms = await User.findOne({ username });
-  console.log(userRooms);
+  console.log(`${username}'s rooms: `, userRooms);
   res.json(Object.assign({}, userRooms.rooms));
 });
 
@@ -74,20 +72,18 @@ app.get("/messages/:roomname", async (req, res) => {
   // returns an array of documents with messages from given room name
   const messages = await Message.find({
     room: roomname,
-  }).sort({createdAt:1});
+  }).sort({ createdAt: 1 });
 
-  // console.log(messages);
   res.json(messages);
 });
 
 app.get("/roomMembers/:roomname", async (req, res) => {
   const { roomname } = req.params;
-  console.log("Room name: ", roomname);
   const roomMembers = await Room.findOne({ name: roomname });
-  console.log("Room members: ",roomMembers.users);
+  console.log(`${roomname} members: `, roomMembers.users);
   const roomMembersArr = roomMembers.users;
   res.json(roomMembersArr);
-})
+});
 
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
@@ -144,17 +140,17 @@ app.post("/createRoom", async (req, res) => {
     // create room
     const createdRoom = await Room.create({
       name: roomname,
-      users: [ username ]
-    })
+      users: [username],
+    });
     console.log("Created room: ", createdRoom);
     // Todo: Verify room was created
 
     // update user's room
     const query = { username: username };
-    User.findOne(query).then(doc => {
-      doc.rooms =  [...doc.rooms, roomname];
+    User.findOne(query).then((doc) => {
+      doc.rooms = [...doc.rooms, roomname];
       doc.save();
-    })
+    });
     console.log(`Created room ${roomname} for ${username}.`);
     res.json("created");
   } catch (err) {
@@ -163,33 +159,33 @@ app.post("/createRoom", async (req, res) => {
     // res.status(500).json("Failed");
     res.json("failed");
   }
-})
+});
 
 app.post("/joinRoom", async (req, res) => {
   const { roomname, username } = req.body;
   try {
     // update room userlist
     const query = { name: roomname };
-    Room.findOne(query).then(room => {
+    Room.findOne(query).then((room) => {
       if (room) {
         room.users = [...room.users, username];
         room.save();
 
-        User.findOne({ username: username }).then(user => {
+        User.findOne({ username: username }).then((user) => {
           if (user) {
-            user.rooms = [...user.rooms, roomname]
+            user.rooms = [...user.rooms, roomname];
             user.save();
           }
-        })
+        });
       }
-    })
+    });
     console.log(`Joined room ${roomname} for ${username}.`);
     res.json("joined");
   } catch (err) {
     console.log(`Failed to join room ${roomname}.`);
     res.json("failed");
   }
-})
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}.`);
@@ -198,7 +194,7 @@ const server = app.listen(PORT, () => {
 // sockets - access all "connection" inside wss.clients
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
-  function notifyAboutOnlinePeople() {
+  function broadcastOnlineClientsList() {
     [...wss.clients].forEach((client) => {
       client.send(
         JSON.stringify({
@@ -219,11 +215,11 @@ wss.on("connection", (connection, req) => {
       connection.isAlive = false;
       clearInterval(connection.timer);
       connection.terminate();
-      console.log("dead");
+      console.log("Connection terminated.");
       // notify clients that somebody disconnected
-      notifyAboutOnlinePeople();
+      broadcastOnlineClientsList();
     }, 1000);
-  }, 5000);
+  }, 3000);
 
   connection.on("pong", () => {
     clearTimeout(connection.deathTimer);
@@ -253,7 +249,7 @@ wss.on("connection", (connection, req) => {
     const { sender, room, text } = msgData;
     if (sender && room && text) {
       // getting a message from mongodb which auto includes the message id as ._id
-      console.log(sender, room, text);
+      console.log(`${sender} in ${room} sent: ${text}`);
       const messageDoc = Message.create({
         sender,
         room,
@@ -275,14 +271,5 @@ wss.on("connection", (connection, req) => {
     }
   });
 
-  // [...wss.clients].forEach((client) => {
-  //   client.send(
-  //     JSON.stringify({
-  //       online: [...wss.clients].map((c) => ({
-  //         userId: c.userId,
-  //         username: c.username,
-  //       })),
-  //     })
-  //   );
-  // });
+  broadcastOnlineClientsList();
 });
