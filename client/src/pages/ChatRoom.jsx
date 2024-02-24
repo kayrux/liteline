@@ -1,11 +1,8 @@
 import { useParams } from "react-router-dom";
 import Button from "@mui/material/Button";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import GroupAddRoundedIcon from "@mui/icons-material/GroupAddRounded";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import ShareIcon from "@mui/icons-material/Share";
 import RoomPreferencesIcon from "@mui/icons-material/RoomPreferences";
-import ChatLobby from "./ChatLobby";
 import Chatbox from "../components/chatbox/Chatbox";
 import Member from "../components/member/Member";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -32,7 +29,11 @@ const ChatRoom = () => {
 
   function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
-    setWs(ws);
+    
+
+    ws.onopen = () => {
+      console.log("ws: Connected.");
+    }
     ws.addEventListener("message", handleMessage);
     // when socket is closed, this makes it reconnect
     ws.addEventListener("close", () => {
@@ -41,7 +42,15 @@ const ChatRoom = () => {
         connectToWs();
       }, 1000);
     });
-    console.log("ws: Connected.");
+    ws.onclose = () => {
+      console.log("ws: Disconnected.");
+    }
+
+    setWs(ws);
+
+    return () => {
+      ws.close();
+    }
   }
 
   useEffect(() => {
@@ -63,12 +72,8 @@ const ChatRoom = () => {
     if ("online" in messageData) {
       readOnlineClients(messageData.online);
     } else if ("event" in messageData && (messageData.event === "join room" || messageData.event === "leave room")) {
-      console.log("Chatroom msg event: ", messageData);
-      console.log("event:", messageData.event ,"target:", messageData.room, "selected", selectedRoom,"roomref", roomRef.current);
       if (roomRef.current && messageData.room === roomRef.current) {
-        console.log("getting room members");
         axios.get("/roomMembers/" + roomRef.current).then((res) => {
-          console.log("Received room members: ", res.data);
           const currentRoomMembers = res.data;
           setRoomMembers(currentRoomMembers);
         });
@@ -85,10 +90,9 @@ const ChatRoom = () => {
   }, []);
 
   useEffect(() => {
-    console.log("Getting members for Current room: ", selectedRoom);
     if (selectedRoom) {
       axios.get("/roomMembers/" + selectedRoom).then((res) => {
-        console.log("Received room members: ", res.data);
+        console.log(`${selectedRoom} members: `, res.data);
         const currentRoomMembers = res.data;
         setRoomMembers(currentRoomMembers);
       });

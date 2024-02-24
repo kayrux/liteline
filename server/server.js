@@ -295,7 +295,7 @@ wss.on("connection", (connection, req) => {
       // notify clients that somebody disconnected
       broadcastOnlineClientsList();
     }, 1000);
-  }, 3000);
+  }, 5000);
 
   // Pong's are automatically sent by clients who receive a ping, this reads that and
   // clears the connection termination timer
