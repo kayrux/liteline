@@ -66,6 +66,7 @@ const Chatbox = (props) => {
       };
       ws.send(
         JSON.stringify({
+          event: "send message",
           sender: username,
           room: roomname,
           text: inputValue,

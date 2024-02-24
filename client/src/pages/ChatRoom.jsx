@@ -8,7 +8,7 @@ import RoomPreferencesIcon from "@mui/icons-material/RoomPreferences";
 import ChatLobby from "./ChatLobby";
 import Chatbox from "../components/chatbox/Chatbox";
 import Member from "../components/member/Member";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { UserContext } from "../UserContext";
 import FormDialog from "../components/FormDialog";
@@ -24,6 +24,11 @@ const ChatRoom = () => {
   const [roomMembers, setRoomMembers] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const { username, id, setId, setUsername } = useContext(UserContext);
+  const roomRef = useRef(selectedRoom);
+
+  useEffect(() => {
+    roomRef.current = selectedRoom;
+  }, [selectedRoom]);
 
   function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
@@ -57,6 +62,17 @@ const ChatRoom = () => {
     const messageData = JSON.parse(e.data);
     if ("online" in messageData) {
       readOnlineClients(messageData.online);
+    } else if ("event" in messageData && (messageData.event === "join room" || messageData.event === "leave room")) {
+      console.log("Chatroom msg event: ", messageData);
+      console.log("event:", messageData.event ,"target:", messageData.room, "selected", selectedRoom,"roomref", roomRef.current);
+      if (roomRef.current && messageData.room === roomRef.current) {
+        console.log("getting room members");
+        axios.get("/roomMembers/" + roomRef.current).then((res) => {
+          console.log("Received room members: ", res.data);
+          const currentRoomMembers = res.data;
+          setRoomMembers(currentRoomMembers);
+        });
+      }
     }
   }
 
@@ -84,6 +100,8 @@ const ChatRoom = () => {
     console.log("Room created? ", data);
     if (data === "created") {
       setJoinedRooms([...joinedRooms, roomname]);
+    } else {
+      console.log(data);
     }
   }
 
@@ -92,6 +110,15 @@ const ChatRoom = () => {
     console.log("Joined room?", data);
     if (data === "joined") {
       setJoinedRooms([...joinedRooms, roomname]);
+      ws.send(
+        JSON.stringify({
+          event: "join room",
+          sender: username,
+          room: roomname,
+        })
+      );
+    } else {
+      console.log(data);
     }
   }
 
@@ -99,6 +126,14 @@ const ChatRoom = () => {
     await axios.post("leaveRoom", { selectedRoom, username }).then((res) => {
       if (res.data.message == "left") {
         setJoinedRooms(res.data.joinedRooms);
+        // broadcast to update connected users
+        ws.send(
+          JSON.stringify({
+            event: "leave room",
+            sender: username,
+            room: selectedRoom,
+          })
+        );
         setSelectedRoom(null);
         console.log(`leaving room ${selectedRoom}`);
       }
@@ -200,7 +235,7 @@ const ChatRoom = () => {
       <div className="flex flex-col w-4/5 min-w-fit h-full items-center">
         <div className="flex border-b-2 w-full h-16 justify-center items-center">
           {selectedRoom === null ? (
-            <>
+            <div className="flex gap-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -215,8 +250,8 @@ const ChatRoom = () => {
                   d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
                 />
               </svg>
-              Pick a room
-            </>
+              {"Pick a room"}
+            </div>
           ) : (
             <>{selectedRoom}</>
           )}
@@ -224,14 +259,15 @@ const ChatRoom = () => {
 
         <div className="flex flex-row w-full h-full max-h-full max-w-full">
           {selectedRoom === null ? (
-            <>No room</>
+            <div className="h-full w-full flex justify-center">
+              <span className="m-auto">No room selected</span>
+            </div>
           ) : (
             <Chatbox username={username} roomname={selectedRoom} ws={ws} />
           )}
         </div>
       </div>
 
-      {/* TODO: Spacing for both sidebars*/}
       {/* Right Sidebar */}
       <div className="border-2 h-full"></div>
       <div className="flex flex-col w-1/5 min-w-fit justify-between items-stretch">

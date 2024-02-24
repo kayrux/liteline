@@ -155,30 +155,29 @@ app.post("/createRoom", async (req, res) => {
     });
     console.log("Created room: ", createdRoom);
     // Todo: Verify room was created
-
-    // update user's room
-    const query = { username: username };
-    User.findOne(query).then((doc) => {
-      doc.rooms = [...doc.rooms, roomname];
-      doc.save();
-    });
-    console.log(`Created room ${roomname} for ${username}.`);
-    res.json("created");
+    if (createdRoom) {
+      // update user's room
+      const query = { username: username };
+      User.findOne(query).then((doc) => {
+        doc.rooms = [...doc.rooms, roomname];
+        doc.save();
+      });
+      console.log(`Created room ${roomname} for ${username}.`);
+      res.json("created");
+    }
   } catch (err) {
     console.log(`Failed to create room ${roomname}.`);
-    // if (err) throw err;
-    // res.status(500).json("Failed");
-    res.json("failed");
+    res.json("Server error or room already exists");
   }
 });
 
+// update room user list & user's room list
 app.post("/joinRoom", async (req, res) => {
   const { roomname, username } = req.body;
   try {
-    // update room userlist
     const query = { name: roomname };
     Room.findOne(query).then((room) => {
-      if (room) {
+      if (room && !room.users.includes(username)) {
         room.users = [...room.users, username];
         room.save();
 
@@ -188,10 +187,13 @@ app.post("/joinRoom", async (req, res) => {
             user.save();
           }
         });
+        console.log(`Joined room ${roomname} for ${username}.`);
+        res.json("joined");
+      } else {
+        console.log(`${username} failed to join ${roomname}`);
+        res.json("room doesn't exit or already in room");
       }
     });
-    console.log(`Joined room ${roomname} for ${username}.`);
-    res.json("joined");
   } catch (err) {
     console.log(`Failed to join room ${roomname}.`);
     res.json("failed");
@@ -318,13 +320,14 @@ wss.on("connection", (connection, req) => {
         });
       }
     }
-  }
+  }  
 
   // On message event, message is stored in database and broadcasted to all connected clients
   connection.on("message", async (message) => {
     const msgData = JSON.parse(message.toString());
-    const { sender, room, text } = msgData;
-    if (sender && room && text) {
+    const { event, sender, room, text } = msgData;
+    console.log(msgData);
+    if (event === "send message" && sender && room && text) {
       // getting a message from mongodb which auto includes the message id as ._id
       console.log(`${sender} in ${room} sent: ${text}`);
       const messageDoc = Message.create({
@@ -345,6 +348,14 @@ wss.on("connection", (connection, req) => {
             })
           )
         );
+    } else if (event === "leave room" || event === "join room") {
+      [...wss.clients].filter((c) => c.username !== sender).forEach((c) => {
+        c.send(JSON.stringify({
+          event: event,
+          sender: connection.username,
+          room,
+        }))
+      })
     }
   });
 
