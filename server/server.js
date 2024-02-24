@@ -53,7 +53,6 @@ app.get("/profile", (req, res) => {
     });
   } else {
     res.json({ userId: null, username: null });
-    // res.status(401).json("no token - unauthorized"); ToDo - bug: when UserContext uses this endpoint
   }
 });
 
@@ -80,7 +79,6 @@ app.get("/messages/:roomname", async (req, res) => {
 app.get("/roomMembers/:roomname", async (req, res) => {
   const { roomname } = req.params;
   const roomMembers = await Room.findOne({ name: roomname });
-  console.log(`${roomname} members: `, roomMembers.users);
   const roomMembersArr = roomMembers.users;
   res.json(roomMembersArr);
 });
@@ -89,24 +87,29 @@ app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
   try {
     const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
-    const createdUser = await User.create({
-      username: username,
-      password: hashedPassword,
-      rooms: [],
-    });
+    const foundUser = await User.findOne({ username });
+    if (foundUser) {
+      res.json("user exists");
+    } else {
+      const createdUser = await User.create({
+        username: username,
+        password: hashedPassword,
+        rooms: [],
+      });
 
-    jwt.sign(
-      { userId: createdUser._id, username },
-      jwtSecret,
-      {},
-      (err, token) => {
-        if (err) throw err;
-        res
-          .cookie("token", token, { sameSite: "none", secure: true })
-          .status(201)
-          .json({ id: createdUser._id });
-      }
-    );
+      jwt.sign(
+        { userId: createdUser._id, username },
+        jwtSecret,
+        {},
+        (err, token) => {
+          if (err) throw err;
+          res
+            .cookie("token", token, { sameSite: "none", secure: true })
+            .status(201)
+            .json({ id: createdUser._id, username: createdUser.username });
+        }
+      );
+    }
   } catch (err) {
     if (err) throw err;
     res.status(500).json("error");
@@ -130,6 +133,8 @@ app.post("/signin", async (req, res) => {
         }
       );
     }
+  } else {
+    res.json("no user");
   }
 });
 
@@ -202,21 +207,21 @@ app.post("/leaveRoom", async (req, res) => {
       if (room) {
         room.users = room.users.filter((user) => {
           return user !== username;
-        })
+        });
         room.save();
 
         User.findOne({ username: username }).then((user) => {
           if (user) {
             user.rooms = user.rooms.filter((room) => {
               return room !== selectedRoom;
-            })
+            });
             user.save();
             console.log(`Left room ${selectedRoom} for ${username}`);
-            res.json({ message: "left", joinedRooms: user.rooms});
+            res.json({ message: "left", joinedRooms: user.rooms });
           }
-        })
+        });
       }
-    })
+    });
   } catch (err) {
     console.log(`Failed to leave room ${selectedRoom}.`);
     res.json("failed");
@@ -258,7 +263,7 @@ const server = app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}.`);
 });
 
-// sockets - access all "connection" inside wss.clients
+// Event based Websockets - access all "connection" inside wss.clients
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
   function broadcastOnlineClientsList() {
@@ -276,9 +281,11 @@ wss.on("connection", (connection, req) => {
 
   connection.isAlive = true;
 
+  // Ping clients every X=3 seconds and expect a "pong" response every Y=1 second(s)
+  // If pong is not received, then connection is terminated and broadcasted
   connection.timer = setInterval(() => {
     connection.ping();
-    connection.deathTimer = setTimeout(() => {
+    connection.terminationTimer = setTimeout(() => {
       connection.isAlive = false;
       clearInterval(connection.timer);
       connection.terminate();
@@ -288,11 +295,13 @@ wss.on("connection", (connection, req) => {
     }, 1000);
   }, 3000);
 
+  // Pong's are automatically sent by clients who receive a ping, this reads that and
+  // clears the connection termination timer
   connection.on("pong", () => {
-    clearTimeout(connection.deathTimer);
+    clearTimeout(connection.terminationTimer);
   });
 
-  // read user info from cookie and add it to the connection
+  // Read user info from cookie and add it to the connection
   const cookies = req.headers.cookie;
   if (cookies) {
     const cookieTokenStr = cookies
@@ -311,6 +320,7 @@ wss.on("connection", (connection, req) => {
     }
   }
 
+  // On message event, message is stored in database and broadcasted to all connected clients
   connection.on("message", async (message) => {
     const msgData = JSON.parse(message.toString());
     const { sender, room, text } = msgData;

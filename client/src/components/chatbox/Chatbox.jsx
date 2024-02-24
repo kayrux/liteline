@@ -52,7 +52,8 @@ const Chatbox = (props) => {
         }
       });
     }
-    setMessages([{ username: "Bot", content: `Room changed to ${roomname}` }]);
+    setMessages([]);
+    // setMessages([{ username: "Bot", content: `Room changed to ${roomname}` }]);
   }, [roomname]);
 
   // Function to handle sending messages

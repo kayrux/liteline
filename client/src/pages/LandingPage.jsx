@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import SignIn from "../components/SignIn";
 import { UserContext } from "../UserContext";
 import ChatRoom from "./ChatRoom";
+import SignInUp from "../components/SignInUp";
 
 const LandingPage = () => {
   const {username, id} = useContext(UserContext);
@@ -14,7 +14,8 @@ const LandingPage = () => {
 
   return (
     <div className="container-center justify-center">
-      <SignIn />
+      <SignInUp />
+      {/* <SignIn /> */}
     </div>
   );
 };

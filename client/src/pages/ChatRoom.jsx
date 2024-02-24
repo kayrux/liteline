@@ -28,7 +28,6 @@ const ChatRoom = () => {
   function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
     setWs(ws);
-    // when we have our web socket up here, we can add things that should happen when we receive a message
     ws.addEventListener("message", handleMessage);
     // when socket is closed, this makes it reconnect
     ws.addEventListener("close", () => {
@@ -46,10 +45,9 @@ const ChatRoom = () => {
 
   // only clients connected to proxy
   function readOnlineClients(clientsArr) {
-    // remove duplicates
     const online = [];
     clientsArr.forEach(({ userId, username }) => {
-      // clientListObj[userId] = username;
+      // remove duplicates
       if (!online.includes(username)) online.push(username);
     });
     setOnlineClients(online);
