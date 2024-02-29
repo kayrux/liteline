@@ -57,3 +57,7 @@ npm start
 6. View all messages previously sent in the room.
 7. View room member's usernames and their status.
 8. Sign out of the account.
+
+## Troubleshooting
+1. Make sure the .env file is named .env (sometimes it gets converted to just env)
+2. .env file is in the server folder

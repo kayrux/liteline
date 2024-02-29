@@ -47,9 +47,11 @@ const Chatbox = (props) => {
       axios.get("/messages/" + roomname).then((res) => {
         console.log("Loaded from db: ", res.data);
         const messagesArr = res.data;
+        const messageLog = [];
         for (const { sender, text } of messagesArr) {
-          setMessages((prev) => [...prev, { username: sender, content: text }]);
+          messageLog.push({ username: sender, content: text });
         }
+        setMessages(messageLog);
       });
     }
     setMessages([]);
