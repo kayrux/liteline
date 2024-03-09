@@ -2,6 +2,14 @@ import JoinRoom from "../popups/JoinRoom";
 import CreateRoom from "../popups/CreateRoom";
 import UserSettings from "../popups/UserSettings";
 import Room from "../member/Room";
+import React from 'react';
+
+// TODO: Test room data array until I connect back end
+var roomsData = [{name: 'CPSC 559 Discussion Group', link: 'roomCode'}, 
+{name: 'Legend of Lonk', link: 'roomCode'},
+{name: 'ASDF MAN', link: 'roomCode'}];
+
+// TODO: Load in room data from backend
 
 const LeftSidebar = (props) => {
   return (
@@ -13,31 +21,12 @@ const LeftSidebar = (props) => {
           id="roomContainer"
           className="overflow-y-auto flex flex-col items-center items-stretch space-y-3 h-full"
         >
-          {/* Example for how Room components are used */}
-          <Room name="CPSC 559 Study Group" link="/chatroom" />
-          <Room name="413 Study Pals" />
-          <Room name="Gaming Discussion" />
-          {/* <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room/>
-                    <Room name="Last Room 1"/>
-                    <Room name="Last Room 2"/> */}
+
+        {/* Dynamically add in the rooms loaded into "roomsData" above */}
+        {roomsData.map(roomComponent => (
+          <Room name={roomComponent.name} link={roomComponent.link} />
+        ))}
+
         </div>
       </div>
       <div className="p-4 flex flex-col justify-between">
@@ -57,6 +46,7 @@ const LeftSidebar = (props) => {
       </div>
     </div>
   );
+  
 };
 
 export default LeftSidebar;
