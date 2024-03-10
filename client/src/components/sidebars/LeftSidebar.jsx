@@ -3,15 +3,32 @@ import CreateRoom from "../popups/CreateRoom";
 import UserSettings from "../popups/UserSettings";
 import Room from "../member/Room";
 import React from 'react';
+import { useState } from 'react';
 
-// TODO: Test room data array until I connect back end
-var roomsData = [{name: 'CPSC 559 Discussion Group', link: 'roomCode'}, 
-{name: 'Legend of Lonk', link: 'roomCode'},
-{name: 'ASDF MAN', link: 'roomCode'}];
-
-// TODO: Load in room data from backend
 
 const LeftSidebar = (props) => {
+
+  const [roomArr, updateArr] = useState([{name: 'CPSC 559 Discussion Group', link: 'roomCode'}, {name: 'Legend of Lonk', link: 'roomCode'}, {name: 'zxcv', link: 'roomCode'}])
+  const { rooms } = []
+
+  // TODO: Make useGetUserRooms() return list of rooms by api
+
+  // A function that updates the list of rooms from the database
+  const fetchRoomList = () =>{
+    try {
+      // const [userPacket, { isLoading }] = <useGetUserRooms()> // Query and get list of rooms for our user with yet to be made function useGetUserRooms()
+      // const res = userPacket({ rooms }).unwrap(); // Unwrap the room names and save it into rooms
+      //updateArr(rooms)
+
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  // Once a user leaves a room/joins another room, they load that page so we update the list of rooms
+  window.addEventListener("load", fetchRoomList())
+
+
   return (
     <div className="flex flex-col justify-between w-1/5 min-w-fit h-full">
       <h1 className="text-lg font-bold mt-4 text-center">Available Rooms</h1>
@@ -23,7 +40,7 @@ const LeftSidebar = (props) => {
         >
 
         {/* Dynamically add in the rooms loaded into "roomsData" above */}
-        {roomsData.map(roomComponent => (
+        {roomArr.map(roomComponent => (
           <Room name={roomComponent.name} link={roomComponent.link} />
         ))}
 
