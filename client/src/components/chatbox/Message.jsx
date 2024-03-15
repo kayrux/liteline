@@ -1,6 +1,4 @@
-import React from "react";
-import { connect } from "react-redux";
-const Message = ({ message, username }) => {
+const Message = ({ message }) => {
   const getMessageTimestamp = (messageDate) => {
     const messageDateTime = new Date(messageDate);
     const today = new Date();
@@ -25,17 +23,14 @@ const Message = ({ message, username }) => {
   return (
     <div className="message">
       <div className="message-header">
-        <span className="username">{username} </span>
+        <span className="username">{message.sendername} </span>
         <span className="timestamp">
           {getMessageTimestamp(message.timestamp)}
         </span>
       </div>
-      <span className="content">{message.content}</span>
+      <span className="content">{message.message}</span>
     </div>
   );
 };
 
-const mapStateToProps = (state) => ({
-  username: state.username,
-});
-export default connect(mapStateToProps)(Message);
+export default Message;

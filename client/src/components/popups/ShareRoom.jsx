@@ -1,4 +1,5 @@
 import { Fragment, useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
@@ -10,9 +11,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 
-const ShareRoom = ({ roomName, roomCode }) => {
+const ShareRoom = () => {
   const [open, setOpen] = useState(false);
   const [copy, setCopy] = useState(false);
+  const { roomInfo } = useSelector((state) => state.room);
 
   const handleOpen = () => {
     setOpen(true);
@@ -23,7 +25,7 @@ const ShareRoom = ({ roomName, roomCode }) => {
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(roomCode);
+    navigator.clipboard.writeText(roomInfo.roomCode);
     setCopy(true);
   };
 
@@ -55,7 +57,7 @@ const ShareRoom = ({ roomName, roomCode }) => {
         }}
       >
         <DialogTitle>
-          Invite friends to <b>{roomName}</b>
+          Invite friends to <b>{roomInfo.roomName}</b>
         </DialogTitle>
         <IconButton
           aria-label="close"
@@ -84,7 +86,7 @@ const ShareRoom = ({ roomName, roomCode }) => {
               type="text"
               fullWidth
               variant="outlined"
-              value={roomCode}
+              value={roomInfo.roomCode}
               InputProps={{
                 readOnly: true,
               }}

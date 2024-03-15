@@ -10,14 +10,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import SignOut from "../authenticator/Signout";
 import { useUpdateUserMutation } from "../../store/user/userApiSlice";
-import { setCredentials } from "../../store/user/authSlice";
+import { setUserInfo } from "../../store/user/userSlice";
 
 const UserSettings = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState({ isError: false, text: "" });
   const [newUsername, setNewUsername] = useState(""); // State to store the new username input
   const [isEditing, setIsEditing] = useState(false); // State to track whether username is being edited
-  const { userInfo } = useSelector((state) => state.auth);
+  const { userInfo } = useSelector((state) => state.user);
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const dispatch = useDispatch();
 
@@ -38,7 +38,7 @@ const UserSettings = () => {
   const onSave = async () => {
     try {
       const res = await updateUser({ username: newUsername }).unwrap();
-      dispatch(setCredentials({ ...res }));
+      dispatch(setUserInfo({ ...res }));
       setMessage({ isError: false, text: "Username Updated" });
     } catch (err) {
       setMessage({ isError: true, text: err?.data?.message || err.error });
@@ -51,7 +51,7 @@ const UserSettings = () => {
     if (userInfo) {
       setNewUsername(userInfo.username);
     }
-  }, []);
+  }, [userInfo]);
 
   return (
     <Fragment>

@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useContext } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -7,10 +8,16 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
+import { useDeleteRoomMutation } from "../../store/room/roomApiSlice";
+import { setRoomInfo } from "../../store/room/roomSlice";
+import { SocketContext } from "../../SocketProvider";
 
-const DeleteRoom = ({ roomName }) => {
-  const [open, setOpen] = useState(false);
+const DeleteRoom = ({ setParentClose, open, setOpen }) => {
+  const socket = useContext(SocketContext);
   const navigate = useNavigate();
+  const [deleteRoom, { isLoading }] = useDeleteRoomMutation();
+  const { roomInfo } = useSelector((state) => state.room);
+  const dispatch = useDispatch();
 
   const handleOpen = () => {
     setOpen(true);
@@ -18,13 +25,18 @@ const DeleteRoom = ({ roomName }) => {
 
   const handleClose = () => {
     setOpen(false);
+    setParentClose();
   };
 
-  const deleteRoom = () => {
-    // delete the room
-    // cascade delete all members
-    // redirect to lobby
-    navigate("/chatroom");
+  const onDeleteRoom = async () => {
+    try {
+      await deleteRoom({ roomCode: roomInfo.roomCode }).unwrap();
+      socket.emit("deleteRoom", roomInfo.roomCode);
+      dispatch(setRoomInfo(null));
+      navigate("/chatroom");
+    } catch (err) {
+      console.log(err?.data?.message || err.error);
+    }
   };
 
   return (
@@ -54,19 +66,19 @@ const DeleteRoom = ({ roomName }) => {
         </IconButton>
         <DialogContent dividers className="flex flex-col gap-5">
           <DialogContentText>
-            Are you sure you want to delete <b>{roomName}</b>? This will
-            permanently delete the room <b>{roomName}</b>, chat history, and
-            remove all members.
+            Are you sure you want to delete <b>{roomInfo.roomName}</b>? This
+            will permanently delete the room <b>{roomInfo.roomName}</b>, chat
+            history, and remove all members.
           </DialogContentText>
 
           <Button
             color="error"
             variant="contained"
-            onClick={deleteRoom}
+            onClick={onDeleteRoom}
             className="flex gap-1.5"
           >
             {`Yes, I want to delete `}
-            {<b>{roomName}</b>}
+            {<b>{roomInfo.roomName}</b>}
           </Button>
         </DialogContent>
       </Dialog>

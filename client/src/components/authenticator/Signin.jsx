@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import { useLoginMutation } from "../../store/user/userApiSlice";
-import { setCredentials } from "../../store/user/authSlice";
+import { setUserInfo } from "../../store/user/userSlice";
 
 const defaultFormFields = {
   username: "",
@@ -34,7 +34,7 @@ const SignIn = () => {
 
     try {
       const res = await login({ username, password }).unwrap();
-      dispatch(setCredentials({ ...res }));
+      dispatch(setUserInfo({ ...res }));
       navigate("/chatroom");
     } catch (err) {
       setMessage(err?.data?.message || err.error);

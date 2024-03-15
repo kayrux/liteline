@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -10,16 +11,27 @@ import IconButton from "@mui/material/IconButton";
 import DeleteRoom from "./DeleteRoom";
 import LeaveRoom from "./LeaveRoom";
 
-const RoomSettings = ({ roomName, isOwner }) => {
-  const [open, setOpen] = useState(false);
+const RoomSettings = () => {
+  const [openSettings, setOpenSettings] = useState(false);
+  const [openLeaveConfirmation, setOpenLeaveConfirmation] = useState(false);
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const { roomInfo } = useSelector((state) => state.room);
+  const { userInfo } = useSelector((state) => state.user);
 
-  const handleOpen = () => {
-    setOpen(true);
+  const handleOpenSettings = () => {
+    setOpenSettings(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
+  const handleCloseSettings = () => {
+    setOpenSettings(false);
   };
+
+  useEffect(() => {
+    if (roomInfo && userInfo) {
+      setIsOwner(roomInfo.owner === userInfo.uid);
+    }
+  }, [roomInfo, userInfo]);
 
   return (
     <Fragment>
@@ -28,13 +40,13 @@ const RoomSettings = ({ roomName, isOwner }) => {
         color="inherit"
         startIcon={<RoomPreferencesIcon />}
         className="flex-grow"
-        onClick={handleOpen}
+        onClick={handleOpenSettings}
       >
         Room Settings
       </Button>
       <Dialog
-        open={open}
-        onClose={handleClose}
+        open={openSettings}
+        onClose={handleCloseSettings}
         PaperProps={{
           component: "div",
         }}
@@ -42,7 +54,7 @@ const RoomSettings = ({ roomName, isOwner }) => {
         <DialogTitle>Room Settings</DialogTitle>
         <IconButton
           aria-label="close"
-          onClick={handleClose}
+          onClick={handleCloseSettings}
           sx={{
             position: "absolute",
             right: 8,
@@ -57,9 +69,19 @@ const RoomSettings = ({ roomName, isOwner }) => {
             There is no going back of below actions. Please be certain.
           </DialogContentText>
 
-          <LeaveRoom roomName={roomName} />
+          <LeaveRoom
+            setParentClose={handleCloseSettings}
+            open={openLeaveConfirmation}
+            setOpen={setOpenLeaveConfirmation}
+          />
 
-          {isOwner && <DeleteRoom roomName={roomName} />}
+          {isOwner && (
+            <DeleteRoom
+              setParentClose={handleCloseSettings}
+              open={openDeleteConfirmation}
+              setOpen={setOpenDeleteConfirmation}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Fragment>

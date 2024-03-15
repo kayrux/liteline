@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       rooms: {
         type: DataTypes.ARRAY(DataTypes.BIGINT),
         allowNull: true,
+        defaultValue: [],
       },
     },
     { timestamps: false }
