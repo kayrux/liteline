@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Divider from "@mui/material/Divider";
@@ -7,8 +7,10 @@ import RightSidebar from "../components/sidebars/RightSidebar";
 import LeftSidebar from "../components/sidebars/LeftSidebar";
 import { useGetUserQuery } from "../store/user/userApiSlice";
 import { setUserInfo } from "../store/user/userSlice";
+import { SocketContext } from "../SocketProvider";
 
 const ChatRoom = () => {
+  const socket = useContext(SocketContext);
   const [skip, setSkip] = useState(true);
   const { userInfo } = useSelector((state) => state.user);
   const { roomInfo } = useSelector((state) => state.room);
@@ -36,6 +38,17 @@ const ChatRoom = () => {
       navigate("/chatroom");
     }
   }, [roomInfo, navigate]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.connect();
+    socket.emit("online");
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [socket]);
 
   return (
     <div className="container-center flex-row justify-between">

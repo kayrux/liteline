@@ -15,7 +15,6 @@ const Room = ({ name, roomCode }) => {
     try {
       const res = await joinRoom({ roomCode }).unwrap();
       dispatch(setRoomInfo({ ...res }));
-      socket.emit("joinRoom", roomCode);
       navigate("/chatroom/" + roomCode);
     } catch (err) {
       console.log(err?.data?.message || err.error);
