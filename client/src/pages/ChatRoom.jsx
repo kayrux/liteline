@@ -42,8 +42,12 @@ const ChatRoom = () => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.on("connect", () => {
+      console.log("Connection (re)established!")
+      socket.emit("online");
+    })
+
     socket.connect();
-    socket.emit("online");
 
     return () => {
       socket.disconnect();

@@ -38,6 +38,11 @@ const RightSidebar = () => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.on("connect", () => {
+      console.log("Connection (re)established!")
+      socket.emit("online");
+    })
+
     socket.emit("online");
 
     socket.on("online", (data) => {

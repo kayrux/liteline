@@ -114,14 +114,13 @@ io.on("connection", (socket) => {
 
   // Event: User joins room >> Send updated online and room member list to room clients
   socket.on("joinRoom", async (data) => {
-    console.log("User joined room:", data);
+    console.log(`${socket.username} joined room:`, data);
     const roomId = data;
     const onlineMembers = [];
     socket.join(roomId);
 
     const sockets = io.sockets.adapter.rooms.get(roomId);
     Array.from(sockets).forEach((sockId) => {
-      console.log(sockId);
       const sockRef = io.sockets.sockets.get(sockId);
       onlineMembers.push({ uid: sockRef.userId, username: sockRef.username });
     });
@@ -141,7 +140,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("leaveRoom", async (data) => {
-    console.log("User left room:", data);
+    console.log(`${socket.username} left room:`, data);
     const roomId = data;
     const onlineMembers = [];
     socket.leave(roomId);
@@ -149,7 +148,6 @@ io.on("connection", (socket) => {
     const sockets = io.sockets.adapter.rooms.get(roomId);
     if (sockets) {
       Array.from(sockets).forEach((sockId) => {
-        console.log(sockId);
         const sockRef = io.sockets.sockets.get(sockId);
         onlineMembers.push({ uid: sockRef.userId, username: sockRef.username });
       });

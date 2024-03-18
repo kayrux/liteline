@@ -35,7 +35,8 @@ const Chatbox = () => {
     if (!socket) return;
 
     const handleMessage = (data) => {
-      if (data) {
+      console.log(data.room, roomInfo.roomCode);
+      if (data && data.room === roomInfo.roomCode) {
         setMessages((prev) => [
           ...prev,
           {
@@ -52,7 +53,7 @@ const Chatbox = () => {
     return () => {
       socket.off("message", handleMessage);
     };
-  }, [socket]);
+  }, [socket, roomInfo.roomCode]);
 
   // Function to handle sending messages
   const sendMessage = async () => {
