@@ -45,6 +45,15 @@ const ChatPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!socket) return;
+    
+    socket.on("connect", () => {
+      console.log("Connection (re)established!")
+      socket.emit("online");
+    })
+  }, [socket])
+
+  useEffect(() => {
     const handleMessage = (data) => {
       if (data && data.room === roomInfo?.roomCode) {
         dispatch(
