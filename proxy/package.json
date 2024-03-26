@@ -1,0 +1,19 @@
+{
+  "name": "proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "http-proxy-middleware": "^2.0.6"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "set-interval-async": "^3.0.3"
+  }
+}
