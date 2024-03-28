@@ -69,10 +69,10 @@ async function checkAllPorts() {
   console.log("*******\n");
 }
 
-// Set up periodic check every 5 seconds
+// Set up periodic check every 3 seconds
 setIntervalAsync(checkAllPorts, 3000);
 
-// create the proxy (without context)
+// create the proxy
 const proxy = createProxyMiddleware(options);
 
 app.use("/", proxy);
