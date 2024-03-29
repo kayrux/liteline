@@ -62,8 +62,6 @@ app.get("/", (req, res) => {
 
 server.listen(PORT, () => {
   console.log(
-    `Server is running at ${
-      PORT ? `http://localhost:${PORT}` : process.env.SERVER_URL
-    }.`
+    `Server is running at ${process.env.SERVER_URL}:${process.env.PORT}.`
   );
 });
