@@ -60,6 +60,10 @@ app.get("/", (req, res) => {
   res.send("hello backend");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).send("hello backend"); // Send 200 OK response with the message
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running at ${process.env.SERVER_URL}:${PORT}.`);
 });

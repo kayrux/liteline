@@ -2,19 +2,27 @@ const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 const { setIntervalAsync } = require("set-interval-async/dynamic");
 const http = require("http");
+const https = require("https");
 const app = express();
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const SERVER_URL = process.env.SERVER_URL || "http://localhost";
+const PORT = process.env.PRIMARY_PORT || "8000";
 
 const options = {
-  target: "http://localhost:8000", // target host
+  protocol: "https:",
+  target: `${SERVER_URL}:${PORT}`, // target host
   changeOrigin: true, // needed for virtual hosted sites
   ws: true, // proxy websockets
   router: function (req) {
     for (let port of Object.keys(onlinePorts)) {
       if (onlinePorts[port]) {
-        return `http://localhost:${port}`;
+        return `${SERVER_URL}:${port}`;
       }
     }
-    return "http://localhost:8000";
+    return `${SERVER_URL}:${PORT}`;
   },
   onProxyReq: function (proxyReq, req, res) {
     // executes on every request
@@ -35,12 +43,13 @@ const onlinePorts = {
 async function checkPort(port) {
   return new Promise((resolve) => {
     const options = {
-      host: "localhost",
+      protocol: "https:",
+      host: "liteline.onrender.com",
       port: port,
       timeout: 2000, // Timeout for the ping request (in milliseconds)
     };
 
-    const req = http.request(options, (res) => {
+    const req = https.request(options, (res) => {
       if (res.statusCode === 200) {
         resolve({ port: port, online: true });
       } else {
