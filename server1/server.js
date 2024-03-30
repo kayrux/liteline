@@ -60,6 +60,11 @@ app.get("/", (req, res) => {
   res.send("hello backend");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).send("health check"); // Send 200 OK response with the message
+  console.log("health check from ip", req.ip);
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running at ${process.env.SERVER_URL}:${PORT}.`);
 });
