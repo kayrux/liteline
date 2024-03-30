@@ -61,7 +61,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).send("hello backend"); // Send 200 OK response with the message
+  res.status(200).send("health check"); // Send 200 OK response with the message
+  console.log("health check from ip", req.ip);
 });
 
 server.listen(PORT, () => {
