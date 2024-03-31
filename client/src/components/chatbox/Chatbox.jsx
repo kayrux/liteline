@@ -27,32 +27,50 @@ const Chatbox = () => {
   // Load room's message log from db
   useEffect(() => {
     if (!isGetMessagesLoading && data) {
-      dispatch(setMessage(data));
+      const receivedMessages = data.map((obj) => ({
+        ...obj,
+        status: "received",
+      }));
+      dispatch(setMessage(receivedMessages));
     }
-  }, [isGetMessagesLoading, data]);
+  }, [roomInfo]);
 
   // Function to handle sending messages
   const sendMessage = async () => {
     if (inputValue.trim() !== "") {
       const newMessage = {
-        sender: userInfo.uid,
+        sender: inputValue === "--fail" ? null : userInfo.uid,
         username: userInfo.username,
         message: inputValue,
         timestamp: new Date().toISOString(), // Add timestamp when message is sent
+        status: "sent",
       };
 
       try {
-        socket.emit("message", { ...newMessage, room: roomInfo.roomCode });
-        dispatch(setMessage([...messages, newMessage]));
         setInputValue("");
+        // dispatch(setMessage([...messages, newMessage]));
         const response = await addMessage({
           ...newMessage,
           room: roomInfo.roomCode,
         }).unwrap();
-        // // check if response 200
-        // if (response) {
-        //   socket.emit("message", { ...newMessage, room: roomInfo.roomCode });
-        // }
+
+        if (response.message === "Message successfully added.") {
+          const confirmedMessage = {
+            ...response.content,
+            username: userInfo.username,
+            status: "received",
+          };
+          // const receivedMessages = data.map((obj) => ({
+          //   ...obj,
+          //   status: "received",
+          // }));
+          dispatch(setMessage([...messages, confirmedMessage]));
+
+          socket.emit("message", {
+            ...confirmedMessage,
+            room: roomInfo.roomCode,
+          });
+        }
       } catch (err) {
         // dispatch error message and maybe logout?
         if (err.status === 500) {
@@ -62,6 +80,54 @@ const Chatbox = () => {
       }
     }
   };
+
+  const resendMessage = async (msg) => {
+    const newMessage = {
+      sender: userInfo.uid,
+      username: userInfo.username,
+      message: msg,
+      timestamp: new Date().toISOString(), // Add timestamp when message is sent
+      status: "sent",
+    };
+
+    try {
+      // dispatch(setMessage([...messages, newMessage]));
+      const response = await addMessage({
+        ...newMessage,
+        room: roomInfo.roomCode,
+      }).unwrap();
+
+      if (response.message === "Message successfully added.") {
+        const confirmedMessage = {
+          ...response.content,
+          username: userInfo.username,
+          status: "received",
+        };
+        const receivedMessages = data.map((obj) => ({
+          ...obj,
+          status: "received",
+        }));
+        dispatch(setMessage([...receivedMessages, confirmedMessage]));
+
+        socket.emit("message", {
+          ...confirmedMessage,
+          room: roomInfo.roomCode,
+        });
+      }
+    } catch (err) {
+      const unsentMessage = {
+        ...newMessage,
+        status: "failed",
+      };
+
+      const receivedMessages = data.map((obj) => ({
+        ...obj,
+        status: "received",
+      }));
+      dispatch(setMessage([...receivedMessages, unsentMessage]));
+      console.log(err?.data?.message || err.error);
+    }
+  }
 
   // Automatically scroll to the bottom of the chat window
   const scrollToBottom = () => {
@@ -99,7 +165,19 @@ const Chatbox = () => {
       <div className="messages-container">
         {messages &&
           messages.map((message, index) => (
-            <Message key={index} message={message} />
+            <div key={index}>
+              <Message message={message} />
+              {message.status === "failed" ? (
+                <button
+                  className="m-0 p-0 opacity-50 text-sm italic"
+                  onClick={() => {
+                    resendMessage(message.message)
+                  }}
+                >
+                  resend?
+                </button>
+              ) : null}
+            </div>
           ))}
         <div ref={messagesEndRef} />
       </div>
