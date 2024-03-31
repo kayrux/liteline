@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       timestamp: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       room: {
         type: DataTypes.BIGINT,
