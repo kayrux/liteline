@@ -8,28 +8,66 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const SERVER_URL = process.env.SERVER_URL || "http://localhost";
-const PORT = process.env.PRIMARY_PORT || "8000";
+// const SERVER_URL = process.env.SERVER_URL || "http://localhost";
+// const PORT = process.env.PRIMARY_PORT || "8000";
+
+// const localOptions = {
+//   protocol: "https:",
+//   target: `${SERVER_URL}:${PORT}`, // target host
+//   changeOrigin: true, // needed for virtual hosted sites
+//   ws: true, // proxy websockets
+//   router: function (req) {
+//     for (let port of Object.keys(onlinePorts)) {
+//       if (onlinePorts[port]) {
+//         return `${SERVER_URL}:${port}`;
+//       }
+//     }
+//     return `${SERVER_URL}:${PORT}`;
+//   },
+//   onProxyReq: function (proxyReq, req, res) {
+//     // executes on every request
+//     console.log("ip address: ", req.connection.remoteAddress);
+//   },
+//   onOpen: function (proxySocket) {
+//     console.log("ip address: ", proxySocket.remoteAddress);
+//   },
+// };
+const expressServers = process.env.EXPRESS_SERVERS.split(" ");
+
+const onlineServers = expressServers.reduce((acc, server) => {
+  return { ...acc, [server]: false };
+}, []);
 
 const options = {
-  protocol: "https:",
-  target: `${SERVER_URL}:${PORT}`, // target host
   changeOrigin: true, // needed for virtual hosted sites
+  protocol: "https:",
   ws: true, // proxy websockets
   router: function (req) {
-    for (let port of Object.keys(onlinePorts)) {
-      if (onlinePorts[port]) {
-        return `${SERVER_URL}:${port}`;
+    for (let server of Object.keys(onlineServers)) {
+      if (onlineServers[server]) {
+        return {
+          protocol: "https:", // The : is required
+          host: server,
+          port: 443,
+        };
       }
     }
-    return `${SERVER_URL}:${PORT}`;
+    return {
+      protocol: "http:",
+      host: "localhost", // Default
+      port: 8000, // Default
+    };
   },
   onProxyReq: function (proxyReq, req, res) {
     // executes on every request
-    console.log("ip address: ", req.connection.remoteAddress);
+    // console.log("\nPROXY REQUEST");
+    // console.log("ip address: ", req.connection.remoteAddress);
+    // console.log("Proxy request target:", proxyReq._headers.host);
   },
   onOpen: function (proxySocket) {
+    // console.log("\nON OPEN");
     // console.log("ip address: ", proxySocket.remoteAddress);
+    // console.log("Proxy socket target:", proxySocket._headers.host);
   },
 };
 
@@ -39,17 +77,53 @@ const onlinePorts = {
   8002: false,
 };
 
-// Check if a port is online
-async function checkPort(port) {
+async function checkServer(server) {
   return new Promise((resolve) => {
     const options = {
       protocol: "https:",
-      host: "liteline.onrender.com",
-      port: port,
+      host: server,
+      path: "/health",
       timeout: 2000, // Timeout for the ping request (in milliseconds)
     };
 
     const req = https.request(options, (res) => {
+      if (res.statusCode === 200) {
+        resolve({ server: server, online: true });
+      } else {
+        resolve({ server: server, online: false });
+      }
+    });
+
+    req.on("error", () => {
+      resolve({ server: server, online: false });
+    });
+
+    req.end();
+  });
+}
+
+async function checkAllServers() {
+  console.log("\n*******");
+  for (const server of Object.keys(onlineServers)) {
+    const result = await checkServer(server);
+    onlineServers[server] = result.online;
+    console.log(
+      `Server ${result.server} is ${result.online ? "online" : "offline"}`
+    );
+  }
+  console.log("*******\n");
+}
+
+// Check if a port is online
+async function checkPort(port) {
+  return new Promise((resolve) => {
+    const options = {
+      host: "localhost",
+      port: port,
+      timeout: 2000, // Timeout for the ping request (in milliseconds)
+    };
+
+    const req = http.request(options, (res) => {
       if (res.statusCode === 200) {
         resolve({ port: port, online: true });
       } else {
@@ -64,7 +138,6 @@ async function checkPort(port) {
     req.end();
   });
 }
-
 // Go through through all the ports and check if they are online.
 async function checkAllPorts() {
   console.log("\n*******");
@@ -79,7 +152,7 @@ async function checkAllPorts() {
 }
 
 // Set up periodic check every 3 seconds
-setIntervalAsync(checkAllPorts, 3000);
+setIntervalAsync(checkAllServers, 5000);
 
 // create the proxy
 const proxy = createProxyMiddleware(options);
