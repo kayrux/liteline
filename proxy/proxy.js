@@ -33,6 +33,8 @@ dotenv.config();
 //   },
 // };
 const expressServers = process.env.EXPRESS_SERVERS.split(" ");
+const CLIENT_PORT = process.env.CLIENT_PORT || 5000;
+const HEALTH_CHECK_INTERVAL = process.env.HEALTH_CHECK_INTERVAL || 5000;
 
 const onlineServers = expressServers.reduce((acc, server) => {
   return { ...acc, [server]: false };
@@ -139,24 +141,24 @@ async function checkPort(port) {
   });
 }
 // Go through through all the ports and check if they are online.
-async function checkAllPorts() {
-  console.log("\n*******");
-  for (const port of Object.keys(onlinePorts)) {
-    const result = await checkPort(port);
-    onlinePorts[port] = result.online;
-    console.log(
-      `Port ${result.port} is ${result.online ? "online" : "offline"}`
-    );
-  }
-  console.log("*******\n");
-}
+// async function checkAllPorts() {
+//   console.log("\n*******");
+//   for (const port of Object.keys(onlinePorts)) {
+//     const result = await checkPort(port);
+//     onlinePorts[port] = result.online;
+//     console.log(
+//       `Port ${result.port} is ${result.online ? "online" : "offline"}`
+//     );
+//   }
+//   console.log("*******\n");
+// }
 
 // Set up periodic check every 3 seconds
-setIntervalAsync(checkAllServers, 5000);
+setIntervalAsync(checkAllServers, HEALTH_CHECK_INTERVAL);
 
 // create the proxy
 const proxy = createProxyMiddleware(options);
 
 app.use("/", proxy);
 
-app.listen(5000);
+app.listen(CLIENT_PORT);
