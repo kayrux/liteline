@@ -69,7 +69,7 @@ const options = {
   onOpen: function (proxySocket) {
     // console.log("\nON OPEN");
     // console.log("ip address: ", proxySocket.remoteAddress);
-    // console.log("Proxy socket target:", proxySocket._headers.host);
+    console.log("Proxy socket target:", proxySocket._headers.host);
   },
   upgrade: function (req, socket, head) {
     console.log("upgrade");
