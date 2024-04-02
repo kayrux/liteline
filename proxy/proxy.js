@@ -55,9 +55,9 @@ const options = {
       }
     }
     return {
-      protocol: "http:",
-      host: "localhost", // Default
-      port: 8000, // Default
+      protocol: "https:",
+      host: "liteline-532q.onrender.com", // Default
+      port: 443, // Default
     };
   },
   onProxyReq: function (proxyReq, req, res) {
