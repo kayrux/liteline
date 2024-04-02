@@ -64,12 +64,16 @@ const options = {
     // executes on every request
     // console.log("\nPROXY REQUEST");
     // console.log("ip address: ", req.connection.remoteAddress);
-    // console.log("Proxy request target:", proxyReq._headers.host);
+    console.log("Proxy request target:", proxyReq._headers.host);
   },
   onOpen: function (proxySocket) {
     // console.log("\nON OPEN");
     // console.log("ip address: ", proxySocket.remoteAddress);
     // console.log("Proxy socket target:", proxySocket._headers.host);
+  },
+  upgrade: function (req, socket, head) {
+    console.log("upgrade");
+    proxy.ws(req, socket, head);
   },
 };
 
