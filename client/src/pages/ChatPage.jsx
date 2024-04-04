@@ -37,7 +37,6 @@ const ChatPage = () => {
 
   useEffect(() => {
     socket.connect();
-    socket.emit("online");
 
     return () => {
       socket.disconnect();
@@ -64,6 +63,7 @@ const ChatPage = () => {
               username: data.username,
               message: data.message,
               timestamp: data.timestamp,
+              status: "received",
             },
           ])
         );

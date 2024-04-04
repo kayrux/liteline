@@ -1,3 +1,5 @@
+import { Button } from "@mui/material";
+
 const Message = ({ message }) => {
   const getMessageTimestamp = (messageDate) => {
     const messageDateTime = new Date(messageDate);
@@ -20,15 +22,21 @@ const Message = ({ message }) => {
     }
   };
 
+  if (!message) {
+    return <></>;
+  }
+
   return (
-    <div className="message">
-      <div className="message-header">
-        <span className="username">{message.username} </span>
-        <span className="timestamp">
-          {getMessageTimestamp(message.timestamp)}
-        </span>
+    <div className={`message`}>
+      <div className={message.status === "received" ? "" : "opacity-25"}>
+        <div className="message-header">
+          <span className="username">{message.username} </span>
+          <span className="timestamp">
+            {getMessageTimestamp(message.timestamp)}
+          </span>
+        </div>
+        <span className="content">{message.message}</span>
       </div>
-      <span className="content">{message.message}</span>
     </div>
   );
 };
