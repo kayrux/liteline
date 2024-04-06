@@ -9,7 +9,7 @@ const parseCookie = (socket) => {
   if (cookies) {
     const cookieTokenStr = cookies
       .split(";")
-      .find((str) => str.startsWith("jwt="));
+      .find((str) => str.trim().startsWith("jwt=")); // When a cookie has more than just "jwt=", there will be whitespace so we should trim to avoid not matching with cases like " jwt="
     if (cookieTokenStr) {
       const token = cookieTokenStr.split("=")[1];
       if (token) {
