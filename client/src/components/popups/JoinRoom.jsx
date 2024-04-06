@@ -21,6 +21,7 @@ import socket from "../../socket";
 
 const JoinRoom = () => {
   const [open, setOpen] = useState(false);
+  const [codeIsNumeric, setCodeBool] = useState(true);
   const [joinRoom, { isLoading }] = useJoinRoomMutation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -103,6 +104,7 @@ const JoinRoom = () => {
             name="roomId"
             label="Room Code"
             type="text"
+            onChange={(event) => setCodeBool(!(/^\d+$/.test(event.target.value)))}
             fullWidth
             variant="outlined"
           />
@@ -110,6 +112,7 @@ const JoinRoom = () => {
             type="submit"
             variant="contained"
             startIcon={<GroupAddRoundedIcon />}
+            disabled={codeIsNumeric}
           >
             Join Room
           </Button>
