@@ -63,7 +63,6 @@ const ChatPage = () => {
               username: data.username,
               message: data.message,
               timestamp: data.timestamp,
-              status: "received",
             },
           ])
         );

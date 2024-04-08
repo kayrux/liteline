@@ -9,6 +9,7 @@ import {
 } from "../../store/message/messageApiSlice";
 import { setMessage } from "../../store/message/messageSlice";
 import socket from "../../socket";
+import { v4 as uuidv4 } from 'uuid';
 
 // Chatbox component to display the chat interface
 const Chatbox = () => {
@@ -26,13 +27,9 @@ const Chatbox = () => {
   // Load room's message log from db
   useEffect(() => {
     if (!isGetMessagesLoading && data) {
-      const receivedMessages = data.map((obj) => ({
-        ...obj,
-        status: "received",
-      }));
-      dispatch(setMessage(receivedMessages));
+      dispatch(setMessage(data));
     }
-  }, [roomInfo]);
+  }, [isGetMessagesLoading, roomInfo]);
 
   // Function to handle sending messages
   const sendMessage = async () => {
@@ -45,9 +42,10 @@ const Chatbox = () => {
         status: "sent",
       };
 
+      // Add message to db -> update array of messages upon receiving confirmation -> broadcast event to app server
+      // Upon failure -> assign failed status (gives a different opacity and retry option)
       try {
         setInputValue("");
-        // dispatch(setMessage([...messages, newMessage]));
         const response = await addMessage({
           ...newMessage,
           room: roomInfo.roomCode,
@@ -57,12 +55,8 @@ const Chatbox = () => {
           const confirmedMessage = {
             ...response.content,
             username: userInfo.username,
-            status: "received",
           };
-          // const receivedMessages = data.map((obj) => ({
-          //   ...obj,
-          //   status: "received",
-          // }));
+          
           dispatch(setMessage([...messages, confirmedMessage]));
 
           socket.emit("message", {
@@ -71,16 +65,15 @@ const Chatbox = () => {
           });
         }
       } catch (err) {
-        const unsentMessage = {
+        const msgId = uuidv4(); // unique id to track the message
+
+        let unsentMessage = {
           ...newMessage,
           status: "failed",
+          id: msgId,
         };
 
-        const receivedMessages = data.map((obj) => ({
-          ...obj,
-          status: "received",
-        }));
-        dispatch(setMessage([...receivedMessages, unsentMessage]));
+        dispatch(setMessage([...messages, unsentMessage]));
         console.log(err?.data?.message || err.error);
       }
     }
@@ -90,13 +83,12 @@ const Chatbox = () => {
     const newMessage = {
       sender: userInfo.uid,
       username: userInfo.username,
-      message: msg,
+      message: msg.message,
       timestamp: new Date().toISOString(), // Add timestamp when message is sent
       status: "sent",
     };
 
     try {
-      // dispatch(setMessage([...messages, newMessage]));
       const response = await addMessage({
         ...newMessage,
         room: roomInfo.roomCode,
@@ -106,13 +98,13 @@ const Chatbox = () => {
         const confirmedMessage = {
           ...response.content,
           username: userInfo.username,
-          status: "received",
         };
-        const receivedMessages = data.map((obj) => ({
-          ...obj,
-          status: "received",
-        }));
-        dispatch(setMessage([...receivedMessages, confirmedMessage]));
+
+        // messages without the failed message
+        const confirmedMessages = messages.filter(m => m.id !== msg.id && m.timestamp !== msg.timestamp)
+        
+        // Add the confirmed new message
+        dispatch(setMessage([...confirmedMessages, confirmedMessage]));
 
         socket.emit("message", {
           ...confirmedMessage,
@@ -121,15 +113,14 @@ const Chatbox = () => {
       }
     } catch (err) {
       const unsentMessage = {
-        ...newMessage,
+        ...msg,
+        timestamp: new Date().toISOString(),
         status: "failed",
       };
+      // messages without the failed message
+      const confirmedMessages = messages.filter(m => m.id !== msg.id && m.timestamp !== msg.timestamp)
 
-      const receivedMessages = data.map((obj) => ({
-        ...obj,
-        status: "received",
-      }));
-      dispatch(setMessage([...receivedMessages, unsentMessage]));
+      dispatch(setMessage([...confirmedMessages, unsentMessage]));
       console.log(err?.data?.message || err.error);
     }
   }
@@ -176,7 +167,7 @@ const Chatbox = () => {
                 <button
                   className="m-0 p-0 opacity-50 text-sm italic"
                   onClick={() => {
-                    resendMessage(message.message)
+                    resendMessage(message)
                   }}
                 >
                   resend?

@@ -28,7 +28,7 @@ const Message = ({ message }) => {
 
   return (
     <div className={`message`}>
-      <div className={message.status === "received" ? "" : "opacity-25"}>
+      <div className={!message.status ? "" : "opacity-25"}>
         <div className="message-header">
           <span className="username">{message.username} </span>
           <span className="timestamp">
