@@ -13,13 +13,13 @@ const SignOut = () => {
 
   const onLogout = async () => {
     try {
-      dispatch(logout());
       await logoutApi();
+      dispatch(logout());
 
-      // Clear the redux cache on logout to make way for a new user session
-      dispatch({ type: "RESET" });
-      dispatch(apiSlice.util.resetApiState());
-      navigate("/");
+      // // Clear the redux cache on logout to make way for a new user session
+      // dispatch({ type: "RESET" });
+      // dispatch(apiSlice.util.resetApiState());
+      // navigate("/");
     } catch (err) {
       console.log(err);
     }
