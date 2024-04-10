@@ -45,6 +45,7 @@ const options = {
   protocol: "https:",
   ws: true, // proxy websockets
   router: function (req) {
+    console.log("Req url: ", req._headers.host);
     for (let server of Object.keys(onlineServers)) {
       if (onlineServers[server]) {
         return {
