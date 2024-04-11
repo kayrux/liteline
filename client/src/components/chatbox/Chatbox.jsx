@@ -32,13 +32,20 @@ const Chatbox = () => {
         status: "received",
       }));
       dispatch(setMessage(receivedMessages));
+      const receivedMessages = data.map((obj) => ({
+        ...obj,
+        status: "received",
+      }));
+      dispatch(setMessage(receivedMessages));
     }
+  }, [roomInfo]);
   }, [roomInfo]);
 
   // Function to handle sending messages
   const sendMessage = async () => {
     if (inputValue.trim() !== "") {
       const newMessage = {
+        sender: inputValue === "--fail" ? null : userInfo.uid,
         sender: inputValue === "--fail" ? null : userInfo.uid,
         username: userInfo.username,
         message: inputValue,
