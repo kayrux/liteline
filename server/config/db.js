@@ -5,7 +5,7 @@ module.exports = {
   HOST: "liteline-server-03.eastus.cloudapp.azure.com",
   USER: process.env.PSQL_USERNAME,
   PASSWORD: process.env.PSQL_PASSWORD,
-  DB: "chatroom_prod",
+  DB: "db_prod",
   PORT: 5432,
   dialect: "postgres",
   SSL: true,
