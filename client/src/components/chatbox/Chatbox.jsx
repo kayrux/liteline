@@ -73,6 +73,15 @@ const Chatbox = () => {
         if (err.status === 500) {
           dispatch(setErrorAlert(err?.data?.message || err.error));
         }
+        const msgId = uuidv4(); // unique id to track the message
+
+        let unsentMessage = {
+          ...newMessage,
+          status: "failed",
+          id: msgId,
+        };
+
+        dispatch(setMessage([...messages, unsentMessage]));
         console.log(err?.data?.message || err.error);
       }
     }
