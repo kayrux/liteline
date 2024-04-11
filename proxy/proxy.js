@@ -4,60 +4,66 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const app = express();
 
-// const allServers = [
-//   "http://localhost:8000",
-//   // "http://localhost:8001",
-//   // "https://liteline.onrender.com",
-//   // "https://liteline-api01.onrender.com",
-//   // "https://liteline-api02-test.onrender.com",
-// ];
+class Queue {
+  constructor() {
+    this.items = [];
+    this.frontIndex = 0;
+    this.backIndex = 0;
+  }
+  enqueue(item) {
+    this.items[this.backIndex] = item;
+    this.backIndex++;
+    return item + " inserted";
+  }
+  dequeue() {
+    const item = this.items[this.frontIndex];
+    delete this.items[this.frontIndex];
+    this.frontIndex++;
+    return item;
+  }
+  peek() {
+    return this.items[this.frontIndex];
+  }
+  size() {
+    return this.backIndex - this.frontIndex;
+  }
+  get printQueue() {
+    return this.items;
+  }
+}
 
-const allServers = process.env.EXPRESS_SERVERS.split(" ");
+const serverList = process.env.EXPRESS_SERVERS?.split(" ");
+const allServers = new Queue();
+if (serverList) {
+  for (const server of serverList) {
+    allServers.enqueue(server);
+  }
+}
 
-const healthyServers = new Set();
-let currentServer = 0;
-let serverChanged = false;
+let hasHealthyServer = false;
 
 const checkHealthyServers = async () => {
   console.log("\n*******************");
-  for (const server of allServers) {
+  for (let i = 0; i < allServers.size(); i++) {
     try {
-      await axios.get(server + "/health");
-      // update health list
-      console.log(`${server}: healthy`);
-      healthyServers.add(server);
+      await axios.get(allServers.peek() + "/health");
+      hasHealthyServer = true;
+      console.log("Healthy: ", allServers.peek());
+      break;
     } catch (error) {
-      console.log(`${server}: unhealthy`);
-      healthyServers.delete(server);
+      let inactive = allServers.dequeue();
+      allServers.enqueue(inactive);
     }
   }
 
-  if (healthyServers.size <= 0) {
-    console.log("\nNo healthy servers");
-  } else {
-    checkCurrentServer();
-  }
+  if (hasHealthyServer) return;
+  hasHealthyServer = false;
+  console.log("No healthy servers");
   console.log("\n*******************");
 };
 
-const checkCurrentServer = () => {
-  // check current server health
-  if (!healthyServers.has(allServers[currentServer])) {
-    // find next healthy server
-    for (let i = 0; i < allServers.length; i++) {
-      const nextServer = (currentServer + i) % allServers.length;
-      if (healthyServers.has(allServers[nextServer])) {
-        currentServer = nextServer;
-        console.log("Current server changed to: ", allServers[currentServer]);
-        serverChanged = true;
-        break;
-      }
-    }
-  }
-};
-
 const reRoute = (req, res) => {
-  return allServers[currentServer];
+  return allServers.peek();
 };
 
 const proxyOptions = {
@@ -71,29 +77,21 @@ const proxyOptions = {
       /* handle proxyReq */
       console.log("on proxyReq", req.url);
 
-      if (healthyServers.size === 0) {
+      if (!hasHealthyServer) {
         proxyReq.end();
         return res.status(500).send({
           message: "No healthy servers",
         });
       }
-
-      console.log("Healthy servers - http: ", healthyServers.size);
-      console.log("Current server - http: ", allServers[currentServer]);
+      console.log("Current server - http: ", allServers.peek());
     },
     proxyReqWs: (proxyReq, req, socket, options, head) => {
       /* handle proxyReq */
       console.log("on proxyReqWs", req.url);
-      if (healthyServers.size === 0) {
+      if (!hasHealthyServer) {
         console.log("No healthy servers - proxyReqWs");
       }
-      if (serverChanged) {
-        console.log("Current server changed - ws: ", allServers[currentServer]);
-        socket.emit("online");
-        serverChanged = false;
-      }
-      console.log("Healthy servers - ws: ", healthyServers.size);
-      console.log("Current server - ws: ", allServers[currentServer]);
+      // console.log("Current server - ws: ", allServers.peek());
     },
     proxyRes: (proxyRes, req, res) => {
       /* handle proxyRes */
@@ -111,6 +109,8 @@ const proxyMiddleware = createProxyMiddleware(proxyOptions);
 
 app.use(proxyMiddleware);
 
+// Initial health check
+checkHealthyServers();
 // Update health periodically
 setInterval(checkHealthyServers, 10000);
 
