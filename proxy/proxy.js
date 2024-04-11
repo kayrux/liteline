@@ -19,23 +19,25 @@ let currentServer = 0;
 let serverChanged = false;
 
 const checkHealthyServers = async () => {
+  console.log("\n*******************");
   for (const server of allServers) {
     try {
       await axios.get(server + "/health");
       // update health list
-      console.log("Healthy: ", server);
+      console.log(`${server}: healthy`);
       healthyServers.add(server);
     } catch (error) {
-      console.log("Server unhealthy: ", server);
+      console.log(`${server}: unhealthy`);
       healthyServers.delete(server);
     }
   }
 
   if (healthyServers.size <= 0) {
-    console.log("No healthy servers");
+    console.log("\nNo healthy servers");
   } else {
     checkCurrentServer();
   }
+  console.log("\n*******************");
 };
 
 const checkCurrentServer = () => {
