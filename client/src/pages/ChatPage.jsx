@@ -101,7 +101,11 @@ const ChatPage = () => {
       if (data && data.roomId === roomInfo?.roomCode) {
         console.log("join room 2");
         dispatch(setOnlineMembers(data.onlineMembers));
-        dispatch(setRoomInfo({ ...roomInfo, members: data.roomMembers }));
+        // dispatch(setRoomInfo({ ...roomInfo, members: data.roomMembers }));
+        if (userInfo.uid === data.requester) {
+          dispatch(setRoomInfo({ ...roomInfo, members: data.roomMembers }));
+        }
+
         if (userInfo.uid !== data.requester) {
           dispatch(setInfoAlert(`${data.joinedUser} joined the room.`));
         }

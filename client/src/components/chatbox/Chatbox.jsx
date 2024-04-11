@@ -10,9 +10,11 @@ import {
 import { setMessage } from "../../store/message/messageSlice";
 import socket from "../../socket";
 import { v4 as uuidv4 } from 'uuid';
+import { useParams } from 'react-router-dom';
 
 // Chatbox component to display the chat interface
 const Chatbox = () => {
+  let { roomCode } = useParams();
   const { userInfo } = useSelector((state) => state.user);
   const { roomInfo } = useSelector((state) => state.room);
   const { messages } = useSelector((state) => state.message);
@@ -20,13 +22,14 @@ const Chatbox = () => {
   const messagesEndRef = useRef(null);
   const [addMessage, { isLoading }] = useAddMessageMutation();
   const { data, isGetMessagesLoading } = useGetMessagesByRoomQuery(
-    roomInfo.roomCode
+    roomCode
   );
   const dispatch = useDispatch();
 
   // Load room's message log from db
   useEffect(() => {
-    if (!isGetMessagesLoading && data) {
+    console.log(roomInfo.roomCode, roomCode)
+    if (!isGetMessagesLoading && data && roomInfo.roomCode === roomCode) {
       dispatch(setMessage(data));
     }
   }, [isGetMessagesLoading, roomInfo]);
