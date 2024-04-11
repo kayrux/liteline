@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Divider from "@mui/material/Divider";
 import Chatbox from "../chatbox/Chatbox";
@@ -8,10 +8,9 @@ import { useGetRoomQuery } from "../../store/room/roomApiSlice";
 import { setRoomInfo } from "../../store/room/roomSlice";
 
 const ChatRoom = () => {
-  const [skip, setSkip] = useState(true);
   const { roomInfo } = useSelector((state) => state.room);
   const { data, isGetRoomLoading } = useGetRoomQuery(roomInfo.roomCode, {
-    skip,
+    skip: roomInfo === null,
   });
   const dispatch = useDispatch();
 
@@ -21,14 +20,6 @@ const ChatRoom = () => {
       dispatch(setRoomInfo({ ...data }));
     }
   }, [data, isGetRoomLoading, roomInfo.roomCode]);
-
-  useEffect(() => {
-    if (!roomInfo) {
-      setSkip(true);
-    } else {
-      setSkip(false);
-    }
-  }, [roomInfo]);
 
   if (isGetRoomLoading) {
     return <Loader isLoading={isGetRoomLoading} />;

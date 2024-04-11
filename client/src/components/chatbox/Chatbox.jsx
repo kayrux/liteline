@@ -8,6 +8,7 @@ import {
   useGetMessagesByRoomQuery,
 } from "../../store/message/messageApiSlice";
 import { setMessage } from "../../store/message/messageSlice";
+import { setErrorAlert } from "../../store/notification/notificationSlice";
 import socket from "../../socket";
 
 // Chatbox component to display the chat interface
@@ -53,6 +54,10 @@ const Chatbox = () => {
         //   socket.emit("message", { ...newMessage, room: roomInfo.roomCode });
         // }
       } catch (err) {
+        // dispatch error message and maybe logout?
+        if (err.status === 500) {
+          dispatch(setErrorAlert(err?.data?.message || err.error));
+        }
         console.log(err?.data?.message || err.error);
       }
     }
