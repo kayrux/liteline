@@ -4,13 +4,15 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const app = express();
 
-const allServers = [
-  "http://localhost:8000",
-  // "http://localhost:8001",
-  // "https://liteline.onrender.com",
-  // "https://liteline-api01.onrender.com",
-  // "https://liteline-api02-test.onrender.com",
-];
+// const allServers = [
+//   "http://localhost:8000",
+//   // "http://localhost:8001",
+//   // "https://liteline.onrender.com",
+//   // "https://liteline-api01.onrender.com",
+//   // "https://liteline-api02-test.onrender.com",
+// ];
+
+const allServers = process.env.EXPRESS_SERVERS.split(" ");
 
 const healthyServers = new Set();
 let currentServer = 0;
