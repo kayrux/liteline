@@ -40,7 +40,7 @@ if (serverList) {
   }
 }
 
-let hasHealthyServer = true;
+let hasHealthyServer = false;
 
 const checkHealthyServers = async () => {
   console.log("\n*******************");
@@ -109,6 +109,8 @@ const proxyMiddleware = createProxyMiddleware(proxyOptions);
 
 app.use(proxyMiddleware);
 
+// Initial health check
+checkHealthyServers();
 // Update health periodically
 setInterval(checkHealthyServers, 10000);
 
