@@ -21,6 +21,11 @@ app.use(
     credentials: true,
   })
 );
+
+app.get("/health", (req, res) => {
+  return res.status(200).send("server alive");
+});
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,6 +50,10 @@ app.use(function (req, res, next) {
   next();
 });
 
+app.get("/", (req, res) => {
+  res.send("hello backend");
+});
+
 // setup websocket
 const server = createServer(app);
 const io = new Server(server, {
@@ -56,14 +65,8 @@ const io = new Server(server, {
 
 initWebSocket(io);
 
-app.get("/", (req, res) => {
-  res.send("hello backend");
-});
-
 server.listen(PORT, () => {
   console.log(
-    `Server is running at ${
-      PORT ? `http://localhost:${PORT}` : process.env.SERVER_URL
-    }.`
+    `Server is running at ${process.env.SERVER_URL}:${process.env.PORT}.`
   );
 });

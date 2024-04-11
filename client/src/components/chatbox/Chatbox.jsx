@@ -8,6 +8,7 @@ import {
   useGetMessagesByRoomQuery,
 } from "../../store/message/messageApiSlice";
 import { setMessage } from "../../store/message/messageSlice";
+import { setErrorAlert } from "../../store/notification/notificationSlice";
 import socket from "../../socket";
 import { v4 as uuidv4 } from 'uuid';
 import { useParams } from 'react-router-dom';
@@ -68,15 +69,10 @@ const Chatbox = () => {
           });
         }
       } catch (err) {
-        const msgId = uuidv4(); // unique id to track the message
-
-        let unsentMessage = {
-          ...newMessage,
-          status: "failed",
-          id: msgId,
-        };
-
-        dispatch(setMessage([...messages, unsentMessage]));
+        // dispatch error message and maybe logout?
+        if (err.status === 500) {
+          dispatch(setErrorAlert(err?.data?.message || err.error));
+        }
         console.log(err?.data?.message || err.error);
       }
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import LeftSidebar from "../components/sidebars/LeftSidebar";
@@ -10,16 +10,19 @@ import { setUserInfo } from "../store/user/userSlice";
 import { setRoomInfo, setOnlineMembers } from "../store/room/roomSlice";
 import { setMessage } from "../store/message/messageSlice";
 import { setInfoAlert } from "../store/notification/notificationSlice";
+import { useErrorBoundary } from "react-error-boundary";
 import socket from "../socket";
 
 const ChatPage = () => {
-  const [skip, setSkip] = useState(true);
   const { userInfo } = useSelector((state) => state.user);
   const { roomInfo, onlineMembers } = useSelector((state) => state.room);
   const { messages } = useSelector((state) => state.message);
-  const { data, isGetUserLoading } = useGetUserQuery(null, { skip });
+  const { data, isGetUserLoading } = useGetUserQuery(null, {
+    skip: userInfo === null,
+  });
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showBoundary } = useErrorBoundary();
 
   useEffect(() => {
     if (!isGetUserLoading && data) {
@@ -28,15 +31,12 @@ const ChatPage = () => {
   }, [data, isGetUserLoading, dispatch]);
 
   useEffect(() => {
-    if (!userInfo) {
-      setSkip(true);
-    } else {
-      setSkip(false);
-    }
-  }, [userInfo]);
-
-  useEffect(() => {
     socket.connect();
+
+    socket.on("connect_error", (err) => {
+      console.log(`connect_error due to ${err.message}`);
+      showBoundary(err);
+    });
 
     return () => {
       socket.disconnect();
@@ -45,12 +45,12 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (!socket) return;
-    
+
     socket.on("connect", () => {
-      console.log("Connection (re)established!")
+      console.log("Connection (re)established!");
       socket.emit("online");
-    })
-  }, [socket])
+    });
+  }, [socket]);
 
   useEffect(() => {
     const handleMessage = (data) => {
