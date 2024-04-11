@@ -7,6 +7,7 @@ import { sortUsersByUsernameAsc } from "../../utils/utility";
 
 const RightSidebar = () => {
   const { roomInfo, onlineMembers } = useSelector((state) => state.room);
+  const { userInfo } = useSelector((state) => state.user);
   const [online, setOnline] = useState([]);
   const [offline, setOffline] = useState([]);
 
@@ -48,6 +49,7 @@ const RightSidebar = () => {
               name={member.username}
               isOwner={roomInfo.owner === member.uid}
               isOnline={true}
+              isSelf={userInfo.username === member.username}
             />
           ))}
           {offline.map((member) => (

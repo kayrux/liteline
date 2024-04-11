@@ -19,7 +19,7 @@ const findMessagesByRoomId = async (id) => {
 const addMessage = asyncHandler(async (req, res) => {
   const { sender, message, timestamp, room } = req.body;
 
-  if (!sender || !timestamp || !room) {
+  if (!sender || !room) {
     return res.status(400).send({
       message: "Missing values for sender, timestamp or room.",
     }); // 400 Bad Request
@@ -29,12 +29,11 @@ const addMessage = asyncHandler(async (req, res) => {
     const newMessage = await Message.create({
       sender,
       room,
-      timestamp,
       message,
     });
 
     if (newMessage) {
-      return res.status(200).json("Message successfully added.");
+      return res.status(200).json({ message: "Message successfully added.", content: newMessage.dataValues});
     } else {
       return res
         .status(400)

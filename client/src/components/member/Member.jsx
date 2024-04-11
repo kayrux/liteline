@@ -2,7 +2,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import CircleIcon from "@mui/icons-material/Circle";
 import StarIcon from "@mui/icons-material/Star";
 
-const Member = ({ name, isOwner, isOnline }) => {
+const Member = ({ name, isOwner, isOnline, isSelf }) => {
   // Put a random number if no name was given
   var randomN = Math.floor(Math.random() * 10000) + 1;
 
@@ -10,7 +10,7 @@ const Member = ({ name, isOwner, isOnline }) => {
     <section
       className={`relative flex items-center rounded-full border-2 ${
         isOnline
-          ? isOwner
+          ? isSelf
             ? "border-violet-200 bg-violet-100"
             : "border-blue-200 bg-blue-50"
           : "border-stone-300 bg-gray-100 opacity-85"

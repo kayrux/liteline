@@ -6,7 +6,7 @@ const app = express();
 
 const allServers = [
   "http://localhost:8000",
-  "http://localhost:8001",
+  // "http://localhost:8001",
   // "https://liteline.onrender.com",
   // "https://liteline-api01.onrender.com",
   // "https://liteline-api02-test.onrender.com",
