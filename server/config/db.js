@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 module.exports = {
-  HOST: "40.87.84.130",
+  HOST: "liteline-server-03.eastus.cloudapp.azure.com",
   USER: process.env.PSQL_USERNAME,
   PASSWORD: process.env.PSQL_PASSWORD,
   DB: "chatroom_prod",
