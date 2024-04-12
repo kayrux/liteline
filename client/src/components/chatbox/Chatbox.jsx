@@ -10,8 +10,8 @@ import {
 import { setMessage } from "../../store/message/messageSlice";
 import { setErrorAlert } from "../../store/notification/notificationSlice";
 import socket from "../../socket";
-import { v4 as uuidv4 } from 'uuid';
-import { useParams } from 'react-router-dom';
+import { v4 as uuidv4 } from "uuid";
+import { useParams } from "react-router-dom";
 
 // Chatbox component to display the chat interface
 const Chatbox = () => {
@@ -20,20 +20,21 @@ const Chatbox = () => {
   const { roomInfo } = useSelector((state) => state.room);
   const { messages } = useSelector((state) => state.message);
   const [inputValue, setInputValue] = useState("");
+  const [confirmedMessages, setConfirmedMessages] = useState([]);
+  const [unsentMessages, setUnsentMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const [addMessage, { isLoading }] = useAddMessageMutation();
-  const { data, isGetMessagesLoading } = useGetMessagesByRoomQuery(
-    roomCode
-  );
+  const { data, isGetMessagesLoading } = useGetMessagesByRoomQuery(roomCode);
   const dispatch = useDispatch();
 
   // Load room's message log from db
   useEffect(() => {
-    console.log(roomInfo.roomCode, roomCode)
+    console.log(roomInfo.roomCode, roomCode);
     if (!isGetMessagesLoading && data && roomInfo.roomCode === roomCode) {
-      dispatch(setMessage(data));
+      setConfirmedMessages(data);
+      dispatch(setMessage([...data, ...unsentMessages]));
     }
-  }, [isGetMessagesLoading, roomInfo]);
+  }, [isGetMessagesLoading, data]);
 
   // Function to handle sending messages
   const sendMessage = async () => {
@@ -60,7 +61,7 @@ const Chatbox = () => {
             ...response.content,
             username: userInfo.username,
           };
-          
+
           dispatch(setMessage([...messages, confirmedMessage]));
 
           socket.emit("message", {
@@ -82,6 +83,7 @@ const Chatbox = () => {
         };
 
         dispatch(setMessage([...messages, unsentMessage]));
+        setUnsentMessages([...unsentMessages, unsentMessage]);
         console.log(err?.data?.message || err.error);
       }
     }
@@ -109,10 +111,19 @@ const Chatbox = () => {
         };
 
         // messages without the failed message
-        const confirmedMessages = messages.filter(m => m.id !== msg.id && m.timestamp !== msg.timestamp)
-        
+        // const confirmedMessages = messages.filter(
+        //   (m) => m.id !== msg.id && m.timestamp !== msg.timestamp
+        // );
+
+        // remove the sent message from unsent messages
+        const unsent = unsentMessages.filter((m) => m.id !== msg.id);
+        setUnsentMessages(unsent);
+        setConfirmedMessages([...confirmedMessages, confirmedMessage]);
+
         // Add the confirmed new message
-        dispatch(setMessage([...confirmedMessages, confirmedMessage]));
+        dispatch(
+          setMessage([...confirmedMessages, ...unsent, confirmedMessage])
+        );
 
         socket.emit("message", {
           ...confirmedMessage,
@@ -125,13 +136,18 @@ const Chatbox = () => {
         timestamp: new Date().toISOString(),
         status: "failed",
       };
-      // messages without the failed message
-      const confirmedMessages = messages.filter(m => m.id !== msg.id && m.timestamp !== msg.timestamp)
 
-      dispatch(setMessage([...confirmedMessages, unsentMessage]));
+      // messages without the failed message
+      // const confirmedMessages = messages.filter(
+      //   (m) => m.id !== msg.id && m.timestamp !== msg.timestamp
+      // );
+
+      dispatch(
+        setMessage([...confirmedMessages, ...unsentMessages, unsentMessage])
+      );
       console.log(err?.data?.message || err.error);
     }
-  }
+  };
 
   // Automatically scroll to the bottom of the chat window
   const scrollToBottom = () => {
@@ -175,7 +191,7 @@ const Chatbox = () => {
                 <button
                   className="m-0 p-0 opacity-50 text-sm italic"
                   onClick={() => {
-                    resendMessage(message)
+                    resendMessage(message);
                   }}
                 >
                   resend?

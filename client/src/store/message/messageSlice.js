@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { sortMessagessByTimestampAsc } from "../../utils/utility";
 
 const initialState = {
   messages: localStorage.getItem("messages")
@@ -11,8 +12,12 @@ export const messageSlice = createSlice({
   initialState,
   reducers: {
     setMessage: (state, action) => {
-      state.messages = action.payload;
-      localStorage.setItem("messages", JSON.stringify(action.payload));
+      const sortedMessages = action.payload.sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
+
+      state.messages = sortedMessages;
+      localStorage.setItem("messages", JSON.stringify(sortedMessages));
     },
   },
 });
