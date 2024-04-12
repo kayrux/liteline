@@ -2,8 +2,10 @@ const express = require("express");
 const axios = require("axios");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
+// Create express app
 const app = express();
 
+// Queue class
 class Queue {
   constructor() {
     this.items = [];
@@ -32,7 +34,10 @@ class Queue {
   }
 }
 
+// Get server list from environment variable
 const serverList = process.env.EXPRESS_SERVERS?.split(" ");
+
+// Create a queue of servers
 const allServers = new Queue();
 if (serverList) {
   for (const server of serverList) {
@@ -40,17 +45,22 @@ if (serverList) {
   }
 }
 
+// Check if there is at least one healthy server
 let hasHealthyServer = false;
 
+// Check server health
 const checkHealthyServers = async () => {
   console.log("\n*******************");
+  // Loop by queue size
   for (let i = 0; i < allServers.size(); i++) {
     try {
+      // Check health of the server
       await axios.get(allServers.peek() + "/health");
       hasHealthyServer = true;
       console.log("Healthy: ", allServers.peek());
       break;
     } catch (error) {
+      // If server is not healthy, move it to the end of the queue
       let inactive = allServers.dequeue();
       allServers.enqueue(inactive);
     }
@@ -62,10 +72,12 @@ const checkHealthyServers = async () => {
   console.log("\n*******************");
 };
 
+// Route to get the current server
 const reRoute = (req, res) => {
   return allServers.peek();
 };
 
+// Proxy options
 const proxyOptions = {
   target: "",
   changeOrigin: true,
@@ -83,7 +95,7 @@ const proxyOptions = {
           message: "No healthy servers",
         });
       }
-      console.log("Current server - http: ", allServers.peek());
+      // console.log("Current server - http: ", allServers.peek());
     },
     proxyReqWs: (proxyReq, req, socket, options, head) => {
       /* handle proxyReq */
@@ -105,8 +117,10 @@ const proxyOptions = {
   },
 };
 
+// Create proxy middleware
 const proxyMiddleware = createProxyMiddleware(proxyOptions);
 
+// Use proxy middleware
 app.use(proxyMiddleware);
 
 // Initial health check
@@ -114,4 +128,5 @@ checkHealthyServers();
 // Update health periodically
 setInterval(checkHealthyServers, 10000);
 
+// Start server, listening on port 5000
 app.listen(5000);
