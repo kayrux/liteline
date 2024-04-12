@@ -1,78 +1,208 @@
-# Getting Started with Create React App
+# Client (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Routes
 
-## Available Scripts
+- “/" - `LandingPage`
+- “/chatroom/*" - `ChatPage` (authenticated user only, non-authenticated user will be redirect to login page)
+    - `LeftSidebar` - always visible
+    - “/chatroom" - `WelcomeChat` - shown when no room selected
+    - “/chatroom/:roomCode" - `ChatRoom`
 
-If this is your first time using npm and/or firebase, make sure to run:
+## React Components
 
-### `npm install`
+### `LandingPage`
 
-Along with:
+- `Authenticator` - control signup & signin tabs
+    - `Signin` - form
+    - `Signup` - form
 
-### `npm install firebase`
+### `ChatPage`
 
-In the project directory, you can run:
+- `ProtectedRoute` - check if authenticated user
+- `LeftSidebar`
+    - `Room` - clickable to join room
+    - `UserSettings` - include username change
+        - `Signout` - button, reset all states upon logout
+    - `JoinRoom` - enter room code to join a room
+    - `CreateRoom` - enter a room name to create a room
+- `WelcomeChat`
+- `ChatRoom`
+    - `ChatBox`
+        - `Message`
+    - `RightSidebar`
+        - `Member`
+        - `RoomSettings`
+            - `LeaveRoom` - leave current room
+            - `DeleteRoom` - delete current room (owner only)
+        - `ShareRoom` - copy room code
 
-### `npm start`
+### other
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- `Loader` - spinner & backdrop when fetching data
+- `Toast` - shows system messages
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Redux Toolkit
 
-### `npm test`
+### `store`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- `reducerProxy` - reset all store states if action type is RESET
+    - [https://redux-toolkit.js.org/rtk-query/api/created-api/api-slice-utils](https://redux-toolkit.js.org/rtk-query/api/created-api/api-slice-utils)
 
-### `npm run build`
+### `rootReducer`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- combines all the slices
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### State management (slices)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Files
+    - `userSlice` (save in localStorage)
+        - `userInfo`
+            - `uid`
+            - `username`
+            - `rooms`
+    - `roomSlice` (save in localStorage)
+        - `roomInfo`
+            - `roomCode`
+            - `roomName`
+            - `owner`
+            - `members`
+        - `onlineMembers` - array
+    - `messageSlice` (save in localStorage)
+        - `messages` - array
+    - `notificationSlice`
+        - `content` - message to user
+        - `color` - `Toast` color
+        - `autoDismiss` - time to auto close `Toast`, null if no auto closure
+        - `open` - whether to open `Toast` or not
+- Usage
+    
+    Get state
+    
+    ```jsx
+    import { useSelector } from "react-redux";
+    
+    const { userInfo } = useSelector((state) => state.user);
+    const { roomInfo, onlineMembers } = useSelector((state) => state.room);
+    const { messages } = useSelector((state) => state.message);
+    const { content, color, autoDismiss, open } = useSelector(
+        (state) => state.notification
+      );
+    ```
+    
+    Set state
+    
+    ```jsx
+    import { useDispatch } from "react-redux";
+    
+    import { setRoomInfo } from "../../store/room/roomSlice";
+    dispatch(setRoomInfo(newData));
+    ```
+    
 
-### `npm run eject`
+### API endpoints
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Documentation: [https://redux-toolkit.js.org/rtk-query/overview](https://redux-toolkit.js.org/rtk-query/overview)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Tags
+    - **The `providesTags` property for the `query` endpoint is used to provide the tag names to caches**
+    - **The `invalidatesTags` property for the `mutation` endpoint is used to remove them from caches**.
+        
+        [https://code.pieces.app/blog/an-overview-of-redux-rtk-query#:~:text=The providesTags property for the,to remove them from caches](https://code.pieces.app/blog/an-overview-of-redux-rtk-query#:~:text=The%20providesTags%20property%20for%20the,to%20remove%20them%20from%20caches).
+        
+- Files
+    - `apiSlice`
+        - `userApiSlice`
+            - `register`
+            - `login`
+            - `logout`
+            - `getUser`
+            - `updateUser`
+        - `roomApiSlice`
+            - `createRoom`
+            - `joinRoom`
+            - `leaveRoom`
+            - `deleteRoom`
+            - `getRoom`
+        - `messageApiSlice`
+            - `addMessage`
+            - `getMessagesByRoom`
+- Usage
+    
+    Mutation
+    
+    ```jsx
+    import { useJoinRoomMutation } from "../../store/room/roomApiSlice";
+    
+    const [joinRoom, { isLoading }] = useJoinRoomMutation();
+    
+    try {
+      const roomData = await joinRoom({ roomCode }).unwrap();
+    } catch (err) {
+      console.log(err);
+    }
+    ```
+    
+    - [https://redux-toolkit.js.org/rtk-query/usage/mutations](https://redux-toolkit.js.org/rtk-query/usage/mutations)
+    
+    Query
+    
+    ```jsx
+    import { useGetUserQuery } from "../store/user/userApiSlice";
+    
+    // skip is used for conditional fetching (see below documentation link)
+    const { data, isGetUserLoading } = useGetUserQuery(null, { skip });
+    
+    useEffect(() => {
+    	if (!isGetUserLoading && data) {
+    	  dispatch(setUserInfo({ ...data }));
+    	}
+    }, [data, isGetUserLoading]);
+    ```
+    
+    - [https://redux-toolkit.js.org/rtk-query/usage/queries](https://redux-toolkit.js.org/rtk-query/usage/queries)
+    - [https://redux-toolkit.js.org/rtk-query/usage/conditional-fetching](https://redux-toolkit.js.org/rtk-query/usage/conditional-fetching)
+    - [https://mattclaffey.medium.com/5-reasons-why-data-handling-is-easier-with-redux-toolkit-rtk-query-d7dd53d07a74](https://mattclaffey.medium.com/5-reasons-why-data-handling-is-easier-with-redux-toolkit-rtk-query-d7dd53d07a74)
+    
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Socket
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```jsx
+// CreateRoom
+- socket.emit("joinRoom")
+- setRoomInfo(res)
 
-## Learn More
+// JoinRoom
+- socket.emit("joinRoom")
+- setRoomInfo(res)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+// Room
+- socket.emit("joinRoom")
+- setRoomInfo(res)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+// DeleteRoom
+- socket.emit("deleteRoom")
+- setRoomInfo(null)
 
-### Code Splitting
+// LeaveRoom
+- socket.emit("leaveRoom")
+- setRoomInfo(null)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+// ChatBox
+- socket.emit("message")
+- setMessage([ ...messages, newMessage ])
 
-### Analyzing the Bundle Size
+// ChatPage
+- socket.connect()
+- socket.on("connect_error")
+- socket.on("connect")
+- socket.emit("online")
+- socket.on("online")
+- socket.on("joinRoom")
+- socket.on("leftRoom")
+- socket.on("deletedRoom")
+- socket.on("message")
+- socket.on("updateUsername")
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- [https://socket.io/docs/v3/emit-cheatsheet/](https://socket.io/docs/v3/emit-cheatsheet/)
+- [https://socket.io/docs/v4/client-socket-instance/](https://socket.io/docs/v4/client-socket-instance/)
